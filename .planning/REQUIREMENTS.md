@@ -24,8 +24,8 @@
 
 ### AI Agent
 
-- [ ] **AI-01**: Khi một alert được tạo, system tự động build context bundle gồm: log window ±5 phút quanh sự kiện, metrics snapshot từ cùng thời điểm, và logs từ các services liên quan (giới hạn 200 lines/service)
-- [ ] **AI-02**: System gọi Claude API với context bundle đã format bằng XML-tagged prompt, nhận và parse structured JSON response thành AnalysisResult
+- [ ] **AI-01**: Spring Boot app expose MCP Server với các tools: `get_logs(container, start_time, end_time)`, `get_metrics(container, timestamp)`, `get_related_service_logs(services[], time_range)`, `list_active_alerts()`
+- [ ] **AI-02**: Khi alert được tạo, AI Agent khởi tạo MCP session với Claude — Claude chủ động gọi MCP tools để thu thập ngữ cảnh cần thiết, sau đó trả về structured JSON analysis
 - [ ] **AI-03**: AI output bao gồm: severity (P1-P4), 2-3 root cause hypotheses có confidence % và evidence từ logs, concrete remediation steps với commands cụ thể khi áp dụng
 
 ### CLI Interface
@@ -75,36 +75,36 @@
 | Auto-remediation (auto-restart, auto-scale) | Nguy hiểm không có safeguards — output remediation suggestions, human executes |
 | OpenTelemetry / OTLP pipeline | Separate observability discipline — dùng Docker API trực tiếp |
 | Prometheus / Alertmanager integration | Production-grade complexity không cần thiết cho learning scope |
-| Anthropic MCP spec chính thức | Custom context bundling đơn giản hơn và đủ cho mục tiêu học tập |
+| Auto-remediation (auto-restart) | Nguy hiểm không có safeguards — output suggestions, human executes |
 
 ## Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DC-01 | TBD | Pending |
-| DC-02 | TBD | Pending |
-| DC-03 | TBD | Pending |
-| AD-01 | TBD | Pending |
-| AM-01 | TBD | Pending |
-| AM-02 | TBD | Pending |
-| AM-03 | TBD | Pending |
-| AM-04 | TBD | Pending |
-| AI-01 | TBD | Pending |
-| AI-02 | TBD | Pending |
-| AI-03 | TBD | Pending |
-| CLI-01 | TBD | Pending |
-| CLI-02 | TBD | Pending |
-| CLI-03 | TBD | Pending |
-| SIM-01 | TBD | Pending |
-| SIM-02 | TBD | Pending |
-| SIM-03 | TBD | Pending |
-| SIM-04 | TBD | Pending |
+| DC-01 | Phase 2 | Pending |
+| DC-02 | Phase 2 | Pending |
+| DC-03 | Phase 2 | Pending |
+| AD-01 | Phase 3 | Pending |
+| AM-01 | Phase 3 | Pending |
+| AM-02 | Phase 3 | Pending |
+| AM-03 | Phase 3 | Pending |
+| AM-04 | Phase 3 | Pending |
+| AI-01 | Phase 4 | Pending |
+| AI-02 | Phase 4 | Pending |
+| AI-03 | Phase 4 | Pending |
+| CLI-01 | Phase 5 | Pending |
+| CLI-02 | Phase 5 | Pending |
+| CLI-03 | Phase 5 | Pending |
+| SIM-01 | Phase 6 | Pending |
+| SIM-02 | Phase 6 | Pending |
+| SIM-03 | Phase 6 | Pending |
+| SIM-04 | Phase 6 | Pending |
 
 **Coverage:**
 - v1 requirements: 18 total
-- Mapped to phases: 0 (TBD — updated by roadmapper)
-- Unmapped: 18 ⚠️ (will be resolved by roadmap creation)
+- Mapped to phases: 18 (complete)
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-05-28*
-*Last updated: 2026-05-28 after initial definition*
+*Last updated: 2026-05-28 after roadmap creation — traceability fully mapped*
