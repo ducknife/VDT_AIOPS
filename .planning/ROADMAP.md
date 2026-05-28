@@ -15,7 +15,7 @@ VDT-AIOps is built as a single Spring Boot process where every layer depends str
 - [ ] **Phase 1: Infrastructure Skeleton** - Spring Boot process + docker-java connectivity + Elasticsearch template + PostgreSQL schema + clean shutdown lifecycle
 - [ ] **Phase 2: Data Collection** - Real-time log streaming from 4 containers, container metrics scraping every 15 seconds, and async log indexing into Elasticsearch with noise pre-filtering
 - [ ] **Phase 3: Detection and Alert Management** - Anomaly detection for service-down events, P1-P4 severity classification, SHA-256 deduplication, incident grouping, and PostgreSQL alert state persistence
-- [ ] **Phase 4: AI Analysis Agent** - Context bundle assembly (log window ±5 min, metrics snapshot, related service logs), Claude API integration with XML-tagged prompts, structured JSON response parsing
+- [ ] **Phase 4: AI Analysis Agent** - Context bundle assembly (logs ±5 min, metrics snapshot, related service logs), Claude API integration with XML-tagged prompts, structured JSON response parsing
 - [ ] **Phase 5: CLI Interface** - Continuous monitoring mode with ANSI color output, interactive free-form question mode, and self-observability status line refreshed every 30 seconds
 - [ ] **Phase 6: Simulation and Validation** - Four simulation scripts covering container kill, HTTP load spike, DB connection exhaustion, and Redis OOM; end-to-end demo validation
 
@@ -58,15 +58,15 @@ VDT-AIOps is built as a single Spring Boot process where every layer depends str
   5. P1-P4 classification boundary is enforced: a service-down event is classified P1, a simulated 25% error rate is classified P2, a simulated 10% error rate is classified P3 (AM-02)
 **Plans**: TBD
 
-### Phase 4: AI Analysis Agent (MCP)
-**Goal**: Spring Boot app exposes an MCP Server with observability tools; when a novel alert fires, an AI Agent session starts where Claude autonomously calls MCP tools to gather context, then returns a structured analysis — without blocking the monitoring loop.
+### Phase 4: AI Analysis Agent
+**Goal**: When a novel alert fires, the Context Builder assembles a rich ContextBundle (log window ±5 min, metrics snapshot, related service logs) and sends it to Claude via XML-tagged prompts; Claude returns a structured JSON analysis — without blocking the monitoring loop.
 **Depends on**: Phase 3
 **Requirements**: AI-01, AI-02, AI-03
 **Success Criteria** (what must be TRUE):
-  1. MCP Server starts and exposes at minimum 4 tools: `get_logs`, `get_metrics`, `get_related_service_logs`, `list_active_alerts` — verified by an MCP client handshake listing available tools (AI-01)
-  2. After a P1 alert fires, an `ai_analyses` row appears in PostgreSQL within 60 seconds with non-null `severity`, at least 2 `root_cause_hypotheses` with `confidence_pct`, and at least 1 `remediation_step` (AI-02, AI-03)
-  3. MCP tool calls are logged — Claude can be seen calling `get_logs` and `get_metrics` during analysis; context is gathered dynamically, not pre-assembled (AI-01, AI-02)
-  4. The analysis is async: monitoring loop continues emitting log lines to stdout while Claude processes the MCP session — no blocking observable (AI-02)
+  1. After a P1 alert fires, Context Builder queries Elasticsearch for logs ±5 minutes around the event and PostgreSQL for metrics at that timestamp — the ContextBundle contains non-empty log entries and metrics data (AI-01)
+  2. An `ai_analyses` row appears in PostgreSQL within 60 seconds of the alert with non-null `severity`, at least 2 `root_cause_hypotheses` with `confidence_pct`, and at least 1 `remediation_step` (AI-02, AI-03)
+  3. The prompt sent to Claude is XML-tagged: `<logs>`, `<metrics>`, `<related_services>` sections are visible in application logs — pre-assembled context, not dynamic tool calls (AI-01, AI-02)
+  4. The analysis is async: monitoring loop continues emitting log lines to stdout while Claude processes — no blocking observable (AI-02)
 **Plans**: TBD
 
 ### Phase 5: CLI Interface

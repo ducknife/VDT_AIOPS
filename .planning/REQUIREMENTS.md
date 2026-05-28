@@ -24,8 +24,8 @@
 
 ### AI Agent
 
-- [ ] **AI-01**: Spring Boot app expose MCP Server với các tools: `get_logs(container, start_time, end_time)`, `get_metrics(container, timestamp)`, `get_related_service_logs(services[], time_range)`, `list_active_alerts()`
-- [ ] **AI-02**: Khi alert được tạo, AI Agent khởi tạo MCP session với Claude — Claude chủ động gọi MCP tools để thu thập ngữ cảnh cần thiết, sau đó trả về structured JSON analysis
+- [ ] **AI-01**: Khi alert được tạo, Context Builder tự động thu thập log ±5 phút, container metrics tại thời điểm sự kiện, và log của các services liên quan — đóng gói thành ContextBundle và gọi Claude API
+- [ ] **AI-02**: Claude nhận ContextBundle qua XML-tagged prompt và trả về structured JSON analysis bao gồm severity, root cause hypotheses, và remediation steps — không blocking monitoring loop
 - [ ] **AI-03**: AI output bao gồm: severity (P1-P4), 2-3 root cause hypotheses có confidence % và evidence từ logs, concrete remediation steps với commands cụ thể khi áp dụng
 
 ### CLI Interface
@@ -76,6 +76,7 @@
 | OpenTelemetry / OTLP pipeline | Separate observability discipline — dùng Docker API trực tiếp |
 | Prometheus / Alertmanager integration | Production-grade complexity không cần thiết cho learning scope |
 | Auto-remediation (auto-restart) | Nguy hiểm không có safeguards — output suggestions, human executes |
+| Anthropic MCP spec chính thức | MCP Server/Client protocol là separate learning topic — custom context bundling đủ cho learning scope này |
 
 ## Traceability
 

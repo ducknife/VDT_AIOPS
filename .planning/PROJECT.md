@@ -42,7 +42,7 @@ Khi một sự kiện bất thường xảy ra, hệ thống phải tự động
 
 **Log Storage strategy:** Elasticsearch để search/filter log nhanh, PostgreSQL để lưu alert state, incidents, và AI analysis results. Cả hai chạy trong Docker Compose.
 
-**Pattern chính (Anthropic MCP):** Spring Boot app đóng vai trò MCP Server, expose các tools: `get_logs(container, start_time, end_time)`, `get_metrics(container, timestamp)`, `get_related_service_logs(services[], time_range)`, `list_active_alerts()`. Khi phát hiện sự kiện, AI Agent khởi tạo MCP session — Claude chủ động gọi các tools để thu thập ngữ cảnh cần thiết, sau đó đưa ra phân tích.
+**Pattern chính (Custom Context Bundling):** Khi phát hiện sự kiện bất thường, Context Builder tự động truy vấn Elasticsearch để lấy logs ±5 phút, PostgreSQL để lấy metrics tại thời điểm sự kiện, và logs của các services liên quan — đóng gói thành ContextBundle với XML-tagged prompt rồi gọi Claude API để phân tích.
 
 **Học tập focus:** Hiểu cách xây dựng AI Agent có ngữ cảnh phong phú, anomaly detection patterns, và integration giữa observability data + LLM reasoning.
 
@@ -59,7 +59,7 @@ Khi một sự kiện bất thường xảy ra, hệ thống phải tự động
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
 | Java Spring Boot thay vì Node.js/TypeScript | Phù hợp hơn với enterprise AIOps context, phong phú ecosystem cho Docker API, Elasticsearch | — Pending |
-| Anthropic MCP spec thay vì custom context bundling | MCP cho phép Claude chủ động query log/metrics qua tools thay vì nhận pre-assembled bundle — phù hợp với mục tiêu học tập MCP patterns | — Pending |
+| Custom context bundling thay vì Anthropic MCP spec | Context Bundle đơn giản hơn, đủ cho learning scope — MCP là separate protocol layer không cần thiết cho v1 | — Pending |
 | PostgreSQL + Elasticsearch (2 storage) | ES cho full-text log search/analytics, PG cho structured state — phản ánh real-world AIOps stack | — Pending |
 | Claude Anthropic API | Context window lớn tốt hơn cho log analysis, phù hợp với platform này | — Pending |
 | CLI-only (không có web UI) | Giữ scope gọn, focus vào AI/detection logic hơn là UI | — Pending |
