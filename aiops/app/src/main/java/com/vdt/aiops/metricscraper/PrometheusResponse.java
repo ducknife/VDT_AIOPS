@@ -5,6 +5,7 @@ import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 
+/* Catch json response from prometheus api */
 @Getter
 @Setter
 public class PrometheusResponse {

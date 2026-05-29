@@ -1,14 +1,11 @@
 package com.vdt.aiops.logcollector;
 
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.List;
 
 import org.springframework.stereotype.Service;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
-import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.Frame;
 
 import lombok.RequiredArgsConstructor;
@@ -26,39 +23,50 @@ public class DockerLogCollector {
 
     /* start all stream for all containers */
     public void startAll() {
-        dockerClient.listContainersCmd().exec()
-                .forEach(c -> {
-                    String containerName = c.getNames()[0].substring(1);
-                    Thread.ofVirtual()
-                            .name("log-" + containerName)
-                            .start(() -> streamContainer(containerName));
-                });
+        log.info("=== startAll() called ===");
+        var containers = dockerClient.listContainersCmd().exec();
+        log.info("Found {} containers", containers.size());
+        containers.forEach(c -> {
+            String containerId = c.getId();
+            String containerName = c.getNames()[0].substring(1);
+            log.info("Spawning thread for: {}", containerName);
+            Thread.ofVirtual()
+                    .name("log-" + containerName)
+                    .start(() -> streamContainer(containerId, containerName));
+        });
     }
 
     /* Stream logs by container ID */
-    private void streamContainer(String containerName) {
-        String containerId = resolveContainerId(containerName);
+    private void streamContainer(String containerId, String containerName) {
         try {
-            log.debug("Stream logs from container: {}", containerName);
+            log.info("Starting log stream: {}", containerName);
             dockerClient.logContainerCmd(containerId)
-                    .withFollowStream(true) /* stream */
+                    .withFollowStream(true)
                     .withStdOut(true) /* get normal logs */
                     .withStdErr(true) /* get error logs */
-                    .withTail(0) /* ignore all logs before, only fetch logs from now */
+                    .withTail(100)
                     .exec(new ResultCallback.Adapter<Frame>() {
                         @Override
                         public void onNext(Frame frame) {
-                            String line = new String(frame.getPayload()).trim();
-                            if (line.isEmpty())
-                                return;
-                            String logLevel = parseLevel(line);
-                            Log entry = Log.builder()
-                                    .container(containerName)
-                                    .logLevel(logLevel)
-                                    .message(line)
-                                    .loggedAt(Instant.now())
-                                    .build();
-                            logRepository.save(entry);
+                            try {
+                                String line = new String(frame.getPayload()).trim();
+                                if (line.isEmpty()) return;
+                                String logLevel = parseLevel(line);
+                                Log entry = Log.builder()
+                                        .container(containerName)
+                                        .logLevel(logLevel)
+                                        .message(line)
+                                        .loggedAt(Instant.now())
+                                        .build();
+                                logRepository.save(entry);
+                            } catch (Exception e) {
+                                log.error("Failed to save log from {}: {}", containerName, e.getMessage());
+                            }
+                        }
+
+                        @Override
+                        public void onError(Throwable throwable) {
+                            log.error("Log stream error for {}: {}", containerName, throwable.getMessage());
                         }
                     })
                     .awaitCompletion();
@@ -66,17 +74,6 @@ public class DockerLogCollector {
             log.warn("Thread interrupted");
             Thread.currentThread().interrupt();
         }
-    }
-
-    /* Docker API need container ID, not container name */
-    private String resolveContainerId(String containerName) {
-        List<Container> containers = dockerClient.listContainersCmd().exec();
-        return containers.stream()
-                .filter(c -> Arrays.stream(c.getNames())
-                        .anyMatch(n -> n.equals("/" + containerName)))
-                .map(n -> n.getId())
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Container Not Found"));
     }
 
     /* parse log */

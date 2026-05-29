@@ -29,8 +29,8 @@ public class DockerConfig {
         /* Http client (connect to docker engine) */
         var httpClient = new ApacheDockerHttpClient.Builder()
                     .dockerHost(config.getDockerHost())
+                    .maxConnections(50)
                     .connectionTimeout(Duration.ofSeconds(10))
-                    .responseTimeout(Duration.ofSeconds(30))
                     .build();
 
         /* Return DockerClient */

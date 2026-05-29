@@ -27,7 +27,7 @@ public class MetricScraper {
     private final RestClient restClient;
     private final AiopsProperties aiopsProperties;
 
-    /* Start scape for each container */
+    /* Start scrape for each container */
     @Scheduled(fixedDelayString = "${aiops.monitoring.poll-interval-ms}")
     public void scrape() {
         List<Container> containers = dockerClient.listContainersCmd().exec();
@@ -49,7 +49,7 @@ public class MetricScraper {
             /* Only containers has http metrics */
             List<String> httpMetricsContainers = aiopsProperties.getMonitoring().getHttpMetricsContainers();
             dockerClient.statsCmd(containerId)
-                    .withNoStream(true)
+                    .withNoStream(true) /* Because schedule to scrape, so no need to stream realtime */
                     .exec(new ResultCallback.Adapter<Statistics>() {
                         @Override
                         public void onNext(Statistics s) {
