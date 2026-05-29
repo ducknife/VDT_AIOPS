@@ -1,0 +1,14 @@
+{
+  "name": "aiops-sim-node-api",
+  "version": "1.0.0",
+  "description": "Simulation API service for VDT-AIOps monitoring",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "pg": "^8.11.3",
+    "redis": "^4.6.13"
+  }
+}

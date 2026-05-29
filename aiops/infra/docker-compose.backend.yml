@@ -1,0 +1,43 @@
+services:
+
+  # ── PostgreSQL — AIOps state (alerts, incidents) + logs ──────────────────
+  # Port 5433 để không đụng với postgres app đang chạy ở 5432
+  postgres-aiops:
+    image: postgres:15-alpine
+    container_name: aiops-postgres-state
+    environment:
+      POSTGRES_DB:       aiopsdb
+      POSTGRES_USER:     aiops
+      POSTGRES_PASSWORD: aiops_secret
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aiops -d aiopsdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres_aiops_data:/var/lib/postgresql/data
+    networks:
+      - aiops-sim-net
+
+  # ── Prometheus — metrics collection ──────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: aiops-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # scrape node-api trên host network
+    networks:
+      - aiops-sim-net
+
+volumes:
+  postgres_aiops_data:
+
+networks:
+  aiops-sim-net:
+    external: true #Báo cho Docker biết: Mạng này đã được tạo bên file simulation rồi.
+    name: aiops-shared-network

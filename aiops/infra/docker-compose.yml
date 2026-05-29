@@ -1,0 +1,172 @@
+# =============================================================================
+# VDT-AIOps — Simulation Environment
+# 5 dịch vụ tạo thành một stack ứng dụng điển hình:
+#   traffic-gen → nginx (proxy) → node-api (app) → postgres (db) + redis (cache)
+# =============================================================================
+
+services:
+
+  # ─── 1. PostgreSQL ───────────────────────────────────────────────────────────
+  # Lưu trữ dữ liệu bền vững của ứng dụng.
+  # alpine = image nhỏ hơn (~80MB so với ~400MB full image)
+  postgres:
+    image: postgres:15-alpine
+    container_name: aiops-postgres
+    environment:
+      POSTGRES_DB:       appdb        # tên database cần tạo
+      POSTGRES_USER:     appuser      # user kết nối
+      POSTGRES_PASSWORD: apppassword  # password (dùng secrets trong production)
+    volumes:
+      # Named volume: data tồn tại kể cả khi container bị xóa và tạo lại
+      - postgres_data:/var/lib/postgresql/data
+      # Bind mount: file SQL này chạy một lần duy nhất khi volume còn trống
+      - ./services/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      # host_port:container_port — dùng để connect từ máy host bằng pgAdmin/DBeaver
+      - "5432:5432"
+    healthcheck:
+      # depends_on condition: service_healthy chỉ pass khi lệnh này thành công
+      test: ["CMD-SHELL", "pg_isready -U appuser -d appdb"]
+      interval: 10s   # kiểm tra mỗi 10 giây
+      timeout: 5s     # timeout mỗi lần kiểm tra
+      retries: 5      # thất bại 5 lần liên tiếp → container unhealthy
+    networks:
+      - aiops-sim-net
+
+  # ─── 2. Redis ────────────────────────────────────────────────────────────────
+  # In-memory cache; giới hạn 256MB để simulate OOM scenario (SIM-04)
+  redis:
+    image: redis:7-alpine
+    container_name: aiops-redis
+    # Override CMD mặc định để cấu hình maxmemory
+    command: >
+      redis-server
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --loglevel notice
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - aiops-sim-net
+
+  # ─── 3. node-api ─────────────────────────────────────────────────────────────
+  # Ứng dụng backend chính; được build từ Dockerfile local
+  node-api:
+    build:
+      context: ./services/node-api   # thư mục chứa Dockerfile
+      dockerfile: Dockerfile
+    container_name: aiops-node-api
+    environment:
+      NODE_ENV:    production
+      PORT:        3000
+      # Tên host = tên service trong Compose (postgres, redis) — Docker tự resolve DNS
+      DATABASE_URL: postgresql://appuser:apppassword@postgres:5432/appdb
+      REDIS_URL:    redis://redis:6379
+    depends_on:
+      # Chờ đến khi postgres và redis thực sự healthy, không chỉ "started"
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "3000:3000"   # expose để Prometheus scrape /metrics
+    networks:
+      - aiops-sim-net
+    restart: unless-stopped
+
+  # ─── 4. nginx ────────────────────────────────────────────────────────────────
+  # Reverse proxy: nhận request từ bên ngoài và forward vào node-api
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: aiops-nginx
+    ports:
+      - "8080:80"   # truy cập stack qua http://localhost:8080
+    volumes:
+      # :ro = read-only, container không thể ghi đè config của mình
+      - ./services/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - node-api
+    networks:
+      - aiops-sim-net
+    restart: unless-stopped
+
+  # ─── 5. nginx-exporter ───────────────────────────────────────────────────────
+  # Đọc /nginx_status, expose Prometheus metrics ở port 9113
+  nginx-exporter:
+    image: nginx/nginx-prometheus-exporter:1.1.0
+    container_name: aiops-nginx-exporter
+    command:
+      - --nginx.scrape-uri=http://nginx/nginx_status
+    ports:
+      - "9113:9113"
+    depends_on:
+      - nginx
+    networks:
+      - aiops-sim-net
+    restart: unless-stopped
+
+  # ─── 6. postgres-exporter ────────────────────────────────────────────────────
+  # Đọc pg_stat_* views, expose Prometheus metrics ở port 9187
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    container_name: aiops-postgres-exporter
+    environment:
+      DATA_SOURCE_NAME: postgresql://appuser:apppassword@postgres:5432/appdb?sslmode=disable
+    ports:
+      - "9187:9187"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - aiops-sim-net
+    restart: unless-stopped
+
+  # ─── 7. redis-exporter ───────────────────────────────────────────────────────
+  # Đọc Redis INFO command, expose Prometheus metrics ở port 9121
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.62.0
+    container_name: aiops-redis-exporter
+    environment:
+      REDIS_ADDR: redis://redis:6379
+    ports:
+      - "9121:9121"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - aiops-sim-net
+    restart: unless-stopped
+
+  # ─── 8. traffic-gen ──────────────────────────────────────────────────────────
+  # Sinh HTTP traffic liên tục vào nginx để tạo log thực tế cho AIOps phân tích.
+  # Không có service này thì log của nginx/node-api gần như trống — không có gì để query.
+  traffic-gen:
+    build:
+      context: ./services/traffic-gen
+      dockerfile: Dockerfile
+    container_name: aiops-traffic-gen
+    depends_on:
+      - nginx
+    networks:
+      - aiops-sim-net
+    restart: unless-stopped
+
+# =============================================================================
+# Named Volumes — tồn tại độc lập với container lifecycle
+# =============================================================================
+volumes:
+  postgres_data:
+    driver: local
+
+# =============================================================================
+# Networks — tất cả service cùng network thì tự gọi nhau qua tên service
+# =============================================================================
+networks:
+  aiops-sim-net:
+    name: aiops-shared-network
+    driver: bridge

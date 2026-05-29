@@ -1,0 +1,9 @@
+{
+  "java.import.maven.enabled": true,
+  "java.configuration.updateBuildConfiguration": "automatic",
+  "java.import.exclusions": [
+    "**/node_modules/**",
+    "**/.git/**"
+  ],
+  "java.compile.nullAnalysis.mode": "automatic"
+}
