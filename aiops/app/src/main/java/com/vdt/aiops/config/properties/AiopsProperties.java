@@ -1,5 +1,7 @@
 package com.vdt.aiops.config.properties;
 
+import java.util.List;
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
@@ -24,5 +26,7 @@ public class AiopsProperties {
     @Setter
     public static class Monitoring {
         private Long pollIntervalMs;
+        private String prometheusUrl;
+        private List<String> httpMetricsContainers;
     }
 }

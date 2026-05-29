@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /* Log collecter use Docker API */
+/* Run only one time */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -27,10 +28,10 @@ public class DockerLogCollector {
     public void startAll() {
         dockerClient.listContainersCmd().exec()
                 .forEach(c -> {
-                    String name = c.getNames()[0].substring(1);
+                    String containerName = c.getNames()[0].substring(1);
                     Thread.ofVirtual()
-                            .name("log-" + name)
-                            .start(() -> streamContainer(name));
+                            .name("log-" + containerName)
+                            .start(() -> streamContainer(containerName));
                 });
     }
 
@@ -38,6 +39,7 @@ public class DockerLogCollector {
     private void streamContainer(String containerName) {
         String containerId = resolveContainerId(containerName);
         try {
+            log.debug("Stream logs from container: {}", containerName);
             dockerClient.logContainerCmd(containerId)
                     .withFollowStream(true) /* stream */
                     .withStdOut(true) /* get normal logs */
@@ -61,6 +63,7 @@ public class DockerLogCollector {
                     })
                     .awaitCompletion();
         } catch (InterruptedException e) {
+            log.warn("Thread interrupted");
             Thread.currentThread().interrupt();
         }
     }

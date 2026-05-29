@@ -48,3 +48,6 @@ aiops:
     log-window-minutes: 5         # ±5 phút xung quanh event
   monitoring:
     poll-interval-ms: 5000        # scrape metrics mỗi 5 giây
+    prometheus-url: http://localhost:9090 
+    http-metrics-containers:
+      - aiops-node-api
