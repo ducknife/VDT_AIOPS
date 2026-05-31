@@ -1,0 +1,15 @@
+# ─── Secrets — KHÔNG bao giờ commit file env thật ───────────────────────────
+# Quy tắc 12-Factor: secret đến từ môi trường, không nằm trong repo.
+.env
+*.env
+.env.*
+# ...nhưng VẪN commit file mẫu (khung rỗng) để người khác biết cần khai báo gì:
+!.env.example
+!*.env.example
+!.env.*.example
+
+# ─── Build artifacts ────────────────────────────────────────────────────────
+target/
+build/
+*.jar
+*.log

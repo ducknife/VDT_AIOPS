@@ -1,3 +1,5 @@
+name: aiops-platform #name of backend project
+
 services:
 
   # ── PostgreSQL — AIOps state (alerts, incidents) + logs ──────────────────
@@ -8,7 +10,7 @@ services:
     environment:
       POSTGRES_DB:       aiopsdb
       POSTGRES_USER:     aiops
-      POSTGRES_PASSWORD: aiops_secret
+      POSTGRES_PASSWORD: ${AIOPS_DB_PASSWORD}   # secret ← .env (đã gitignore)
     ports:
       - "5433:5432"
     healthcheck:
@@ -34,10 +36,43 @@ services:
     networks:
       - aiops-sim-net
 
+  # ── AIOps Engine — bộ não always-on (Java Spring Boot) ───────────────────
+  aiops-engine:
+    build:
+      context: ../app          # từ infra/ trỏ sang aiops/app/ (bẫy build-context)
+      dockerfile: Dockerfile
+    container_name: aiops-engine
+    environment:
+      # ── Docker API: qua TCP host.docker.internal (daemon nằm trong VM Docker Desktop) ──
+      DOCKER_HOST: tcp://host.docker.internal:2375
+      # ── State DB: tên SERVICE nội bộ + port NỘI BỘ (không phải localhost:5433) ──
+      AIOPS_DB_HOST: postgres-aiops
+      AIOPS_DB_PORT: "5432"
+      AIOPS_DB_NAME: aiopsdb
+      AIOPS_DB_USERNAME: aiops
+      AIOPS_DB_PASSWORD: ${AIOPS_DB_PASSWORD}   # secret ← .env (CÙNG biến với postgres-aiops)
+      # ── Prometheus: tên service, không phải localhost ──
+      PROMETHEUS_URL: http://prometheus:9090
+      # ── Claude: application.yaml KHÔNG có default → bắt buộc phải có ──
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}   # secret ← .env
+      SERVER_PORT: "8088"
+    ports: 
+      - "127.0.0.1:8088:8088"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - aiops-sim-net
+    depends_on:
+      postgres-aiops:
+        condition: service_healthy 
+      prometheus: 
+        condition: service_started
+    restart: unless-stopped # self wakeup
+
 volumes:
   postgres_aiops_data:
 
 networks:
   aiops-sim-net:
-    external: true #Báo cho Docker biết: Mạng này đã được tạo bên file simulation rồi.
+    external: true   # mạng đã được tạo bên file simulation rồi
     name: aiops-shared-network

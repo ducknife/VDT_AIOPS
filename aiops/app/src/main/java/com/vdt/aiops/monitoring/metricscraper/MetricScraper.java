@@ -1,6 +1,7 @@
-package com.vdt.aiops.metricscraper;
+package com.vdt.aiops.monitoring.metricscraper;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.scheduling.annotation.Scheduled;
@@ -9,9 +10,10 @@ import org.springframework.web.client.RestClient;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
-import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.Statistics;
 import com.vdt.aiops.config.properties.AiopsProperties;
+import com.vdt.aiops.utils.MonitoredContainers;
+import com.vdt.aiops.utils.ServiceName;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 public class MetricScraper {
 
     private final DockerClient dockerClient;
+    private final MonitoredContainers monitoredContainers;
     private final MetricSnapshotRepository metricSnapshotRepository;
     private final RestClient restClient;
     private final AiopsProperties aiopsProperties;
@@ -30,11 +33,10 @@ public class MetricScraper {
     /* Start scrape for each container */
     @Scheduled(fixedDelayString = "${aiops.monitoring.poll-interval-ms}")
     public void scrape() {
-        List<Container> containers = dockerClient.listContainersCmd().exec();
-        containers.forEach(
-                c -> {
+        monitoredContainers.list()
+                .forEach(c -> {
                     String containerId = c.getId();
-                    String containerName = c.getNames()[0].substring(1);
+                    String containerName = ServiceName.serviceName(c);
                     String containerState = c.getState();
                     Thread.ofVirtual()
                             .name("metric-" + containerName)
@@ -48,6 +50,7 @@ public class MetricScraper {
             log.debug("Scrape from docker stats");
             /* Only containers has http metrics */
             List<String> httpMetricsContainers = aiopsProperties.getMonitoring().getHttpMetricsContainers();
+            List<MetricSnapshot> entries = new ArrayList<>();
             dockerClient.statsCmd(containerId)
                     .withNoStream(true) /* Because schedule to scrape, so no need to stream realtime */
                     .exec(new ResultCallback.Adapter<Statistics>() {
@@ -87,10 +90,17 @@ public class MetricScraper {
                                     .latencyMs(latencyMs)
                                     .healthy(isHealthy)
                                     .build();
-                            metricSnapshotRepository.save(entry);
+                            entries.add(entry);
                         }
                     })
                     .awaitCompletion();
+            /*
+             * Can save after awaitCompletion because no stream, docker java thread return
+             * for virtual thread immediately
+             */
+            if (!entries.isEmpty()) {
+                metricSnapshotRepository.save(entries.get(0));
+            }
         } catch (InterruptedException e) {
             log.warn("Thread Interrupted");
             Thread.currentThread().interrupt();
@@ -98,11 +108,11 @@ public class MetricScraper {
     }
 
     /* get stats request, errors, http_lantency_avg_ms */
-    private double queryPrometheus(String promql) {
+    private double queryPrometheus(String promQL) {
         try {
             log.debug("Scrape from Prometheus");
             PrometheusResponse response = restClient.get()
-                    .uri(aiopsProperties.getMonitoring().getPrometheusUrl() + "/api/v1/query?query={promql}", promql)
+                    .uri(aiopsProperties.getMonitoring().getPrometheusUrl() + "/api/v1/query?query={promQL}", promQL)
                     .retrieve() /* send http request and prepare to read response */
                     .body(PrometheusResponse.class); /* jackson parse to Prometheus object */
             if (response == null || response.getData() == null || response.getData().getResult() == null
@@ -112,7 +122,7 @@ public class MetricScraper {
             String raw = response.getData().getResult().get(0).getValue().get(1).toString();
             return Double.parseDouble(raw);
         } catch (Exception e) {
-            log.warn("Prometheus query failed: {}", promql);
+            log.warn("Prometheus query failed: {}", promQL);
             return 0.0;
         }
     }

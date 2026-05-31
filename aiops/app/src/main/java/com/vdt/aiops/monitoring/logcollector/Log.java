@@ -1,8 +1,10 @@
-package com.vdt.aiops.logcollector;
+package com.vdt.aiops.monitoring.logcollector;
 
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.Instant;
+
+import com.vdt.aiops.monitoring.logcollector.enums.LogLevel;
 
 @Entity
 @Table(name = "container_logs")
@@ -16,7 +18,8 @@ public class Log {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String container;
-    private String logLevel;
+    @Enumerated(EnumType.STRING)
+    private LogLevel logLevel;
     @Column(nullable = false, columnDefinition = "TEXT")
     private String message;
     private Instant loggedAt;

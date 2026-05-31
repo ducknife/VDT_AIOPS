@@ -24,6 +24,12 @@ public class AiopsProperties {
 
     @Getter
     @Setter
+    public static class Log {
+        private Long flushIntervalMs;
+    }
+
+    @Getter
+    @Setter
     public static class Monitoring {
         private Long pollIntervalMs;
         private String prometheusUrl;

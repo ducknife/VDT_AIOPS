@@ -39,18 +39,17 @@
 			<artifactId>spring-boot-starter</artifactId>
 		</dependency>
 
-		<!-- ── CLI REPL ──────────────────────────────────────────────────────── -->
-		<dependency>
-			<groupId>org.springframework.shell</groupId>
-			<artifactId>spring-shell-starter</artifactId>
-			<version>3.2.7</version>
-		</dependency>
-
 		<!-- ── AI: Claude (Anthropic) ────────────────────────────────────────── -->
 		<dependency>
 			<groupId>org.springframework.ai</groupId>
 			<artifactId>spring-ai-starter-model-anthropic</artifactId>
 		</dependency>
+
+		<!-- Websocket -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-websocket</artifactId>
+    	</dependency>
 
 		<!-- ── Docker Engine API ─────────────────────────────────────────────── -->
 		<dependency>
@@ -96,13 +95,7 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
-			<!-- RestClient only — exclude Tomcat since this is a CLI app -->
-			<exclusions>
-				<exclusion>
-					<groupId>org.springframework.boot</groupId>
-					<artifactId>spring-boot-starter-tomcat</artifactId>
-				</exclusion>
-			</exclusions>
+			<!-- Tomcat ĐƯỢC GIỮ LẠI: làm servlet + WebSocket server (headless), giữ JVM sống -->
 		</dependency>
 
 		<!-- ── Lombok ───────────────────────────────────────────────────────────── -->

@@ -3,7 +3,7 @@
 # 5 dịch vụ tạo thành một stack ứng dụng điển hình:
 #   traffic-gen → nginx (proxy) → node-api (app) → postgres (db) + redis (cache)
 # =============================================================================
-
+name: aiops-sim
 services:
 
   # ─── 1. PostgreSQL ───────────────────────────────────────────────────────────
@@ -15,7 +15,7 @@ services:
     environment:
       POSTGRES_DB:       appdb        # tên database cần tạo
       POSTGRES_USER:     appuser      # user kết nối
-      POSTGRES_PASSWORD: apppassword  # password (dùng secrets trong production)
+      POSTGRES_PASSWORD: ${APP_DB_PASSWORD}  # secret ← .env (đã gitignore)
     volumes:
       # Named volume: data tồn tại kể cả khi container bị xóa và tạo lại
       - postgres_data:/var/lib/postgresql/data
@@ -41,7 +41,7 @@ services:
     # Override CMD mặc định để cấu hình maxmemory
     command: >
       redis-server
-      --maxmemory 256mb
+      --maxmemory ${REDIS_MAX_MEMORY}
       --maxmemory-policy allkeys-lru
       --loglevel notice
     ports:
@@ -65,7 +65,7 @@ services:
       NODE_ENV:    production
       PORT:        3000
       # Tên host = tên service trong Compose (postgres, redis) — Docker tự resolve DNS
-      DATABASE_URL: postgresql://appuser:apppassword@postgres:5432/appdb
+      DATABASE_URL: postgresql://appuser:${APP_DB_PASSWORD}@postgres:5432/appdb
       REDIS_URL:    redis://redis:6379
     depends_on:
       # Chờ đến khi postgres và redis thực sự healthy, không chỉ "started"
@@ -116,7 +116,7 @@ services:
     image: prometheuscommunity/postgres-exporter:v0.15.0
     container_name: aiops-postgres-exporter
     environment:
-      DATA_SOURCE_NAME: postgresql://appuser:apppassword@postgres:5432/appdb?sslmode=disable
+      DATA_SOURCE_NAME: postgresql://appuser:${APP_DB_PASSWORD}@postgres:5432/appdb?sslmode=disable
     ports:
       - "9187:9187"
     depends_on:

@@ -2,7 +2,7 @@ spring:
   application:
     name: aiops
   main:
-    web-application-type: none   # CLI app — no Tomcat
+    web-application-type: servlet   # headless server: Tomcat foreground giữ JVM sống + phục vụ WebSocket
 
   threads:
     virtual:
@@ -10,9 +10,10 @@ spring:
 
   # ── PostgreSQL (AIOps state: alerts, incidents) ──────────────────────────
   datasource:
-    url: jdbc:postgresql://localhost:5433/aiopsdb
-    username: aiops
-    password: aiops_secret
+    # ${VAR:default} — default = giá trị chạy local; container set env đè lên (xem Chiêu 3)
+    url: jdbc:postgresql://${AIOPS_DB_HOST:localhost}:${AIOPS_DB_PORT:5433}/${AIOPS_DB_NAME:aiopsdb}
+    username: ${AIOPS_DB_USERNAME:aiops}
+    password: ${AIOPS_DB_PASSWORD:aiops_secret}   # default chỉ để dev local; production inject qua secret
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -34,6 +35,10 @@ spring.ai:
         model: claude-sonnet-4-6
         max-tokens: 4096
 
+# ── Web server (Tomcat) — cổng engine phục vụ WebSocket/REST cho React Ink TUI ──
+server:
+  port: ${SERVER_PORT:8088}   # 8088 vì host 8080 đã bị nginx (simulation) chiếm
+
 # ── Docker ────────────────────────────────────────────────────────────────
 docker:
   host: ${DOCKER_HOST:tcp://localhost:2375}
@@ -46,9 +51,11 @@ aiops:
     window-size: 20               # sliding window for z-score
   context:
     log-window-minutes: 5         # ±5 phút xung quanh event
+  log: 
+    flush-interval-ms: 2000       # flush logs mỗi 2
   monitoring:
-    poll-interval-ms: 5000        # scrape metrics mỗi 5 giây
-    prometheus-url: http://localhost:9090 
+    poll-interval-ms: 5000        # scrape metrics mỗi 5
+    prometheus-url: ${PROMETHEUS_URL:http://localhost:9090}
     http-metrics-containers:
-      - aiops-node-api
+      - node-api
       

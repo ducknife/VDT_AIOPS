@@ -1,4 +1,4 @@
-package com.vdt.aiops.metricscraper;
+package com.vdt.aiops.monitoring.metricscraper;
 
 import java.time.Instant;
 import java.util.List;
