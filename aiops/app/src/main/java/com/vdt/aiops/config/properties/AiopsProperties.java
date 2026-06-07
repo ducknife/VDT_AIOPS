@@ -20,12 +20,12 @@ public class AiopsProperties {
     private Monitoring monitoring = new Monitoring();
     private Log log = new Log();
     private Anomaly anomaly = new Anomaly();
+    private Correlation correlation = new Correlation();
 
     @Getter
     @Setter
     public static class Anomaly {
         private List<AnomalyRule> rules = new ArrayList<>();
-        private Long windowSize;
     }
     
     @Getter
@@ -45,5 +45,12 @@ public class AiopsProperties {
     public static class Monitoring {
         private Long pollIntervalMs;
         private String prometheusUrl;
+    }
+
+    @Getter
+    @Setter
+    public static class Correlation {
+        private int quietWindowSeconds;
+        private int maxWaitSeconds;
     }
 }

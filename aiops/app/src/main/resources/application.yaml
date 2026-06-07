@@ -91,12 +91,15 @@ aiops:
         greater-than: true
         threshold: 1.0              # errorRate = lỗi/GIÂY (rate[1m]), KHÔNG phải %. Tune theo tải.
         type: ERROR_RATE_SPIKE
-    window-size: 20                 # để dành cho z-score sau
   context:
     log-window-minutes: 5         # ±5 phút xung quanh event
   log: 
-    flush-interval-ms: 2000       # flush logs mỗi 2
+    flush-interval-ms: 2000       # flush logs mỗi 2s
   monitoring:
-    poll-interval-ms: 5000        # scrape metrics mỗi 5
+    poll-interval-ms: 5000        # scrape metrics mỗi 5s
     prometheus-url: ${PROMETHEUS_URL:http://localhost:9090}
-      
+  correlation: 
+    quiet-window-seconds: 30 # 30s không có alert mới gộp -> dispatch
+    max-wait-seconds: 120       # chờ tối đa 2 phút rồi gửi đại -> trường hợp alert rỉ rải cứ cứ 29s lại có 1 cái, làm quiet 30s không kích hoạt
+
+

@@ -32,7 +32,6 @@ public class AlertManager {
                         .message(d.getMessage())
                         .build();
                 alertRepository.save(alert);
-                // TODO: agent will start investigate here
             }
         }
 
