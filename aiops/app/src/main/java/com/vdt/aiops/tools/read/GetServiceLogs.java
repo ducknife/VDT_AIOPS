@@ -17,15 +17,16 @@ import lombok.RequiredArgsConstructor;
 /* Fetch logs from database */
 @Component
 @RequiredArgsConstructor
-public class GetContainerLogs {
+public class GetServiceLogs {
 
     private final LogRepository logRepository;
 
-    @Tool(description = "Fetch logs of a specific container between two timestamps. " +
-            "Use this when investigating errors or anomalies in a container. " +
-            "Parameters: container name (e.g. 'aiops-nginx'), fromIso and toIso in ISO-8601 format (e.g. '2024-01-01T10:00:00Z'). "
-            + "Optional logLevel: ERROR, WARN, INFO — null to get all levels.")
-    public String fetchLogs(String container, String fromIso, String toIso, String logLevel) {
+    @Tool(description = "Fetch logs of a specific service between two timestamps. " +
+            "Use this when investigating errors or anomalies in a service. " +
+            "Parameters: service name (e.g. 'nginx', 'node-api', 'redis', 'postgres'), " +
+            "fromIso and toIso in ISO-8601 format (e.g. '2024-01-01T10:00:00Z'). " +
+            "Optional logLevel: ERROR, WARN, INFO — null to get all levels.")
+    public String fetchLogs(String service, String fromIso, String toIso, String logLevel) {
         try {
             Instant from = Instant.parse(fromIso);
             Instant to = Instant.parse(toIso);
@@ -37,12 +38,12 @@ public class GetContainerLogs {
                     return "Invalid logLevel. Use INFO, WARN, or ERROR.";
                 }
             }
-            List<Log> logs = level == null ? logRepository.findByContainerAndLoggedAtBetween(container, from, to)
-                    : logRepository.findByContainerAndLogLevelAndLoggedAtBetween(container, level, from, to);
+            List<Log> logs = level == null ? logRepository.findByServiceAndLoggedAtBetween(service, from, to)
+                    : logRepository.findByServiceAndLogLevelAndLoggedAtBetween(service, level, from, to);
             if (logs.isEmpty()) {
-                return "No logs found for container: " + container;
+                return "No logs found for container: " + service;
             }
-            return "Container: " + container + " | Logs: " + logs.size() + "\n"
+            return "Service: " + service + " | Logs: " + logs.size() + "\n"
                     + logs.stream()
                             .map(this::format)
                             .collect(Collectors.joining("\n"));

@@ -1,0 +1,1 @@
+ALTER TABLE container_logs RENAME COLUMN container TO service;

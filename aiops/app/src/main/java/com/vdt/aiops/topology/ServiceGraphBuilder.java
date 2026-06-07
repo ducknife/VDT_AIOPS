@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 
 import com.github.dockerjava.api.model.Container;
 import com.vdt.aiops.topology.enums.ServiceRole;
-import com.vdt.aiops.utils.MonitoredContainers;
+import com.vdt.aiops.utils.MonitoredServices;
 import com.vdt.aiops.utils.ServiceName;
 
 import jakarta.annotation.PostConstruct;
@@ -23,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class ServiceGraphBuilder {
 
-    private final MonitoredContainers monitoredContainers;
+    private final MonitoredServices monitoredContainers;
     private volatile ServiceGraph cached; /* volatile because it is common resource */
 
     @PostConstruct

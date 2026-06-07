@@ -7,7 +7,7 @@ import java.time.Instant;
 import com.vdt.aiops.monitoring.logcollector.enums.LogLevel;
 
 @Entity
-@Table(name = "container_logs")
+@Table(name = "service_logs")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -17,7 +17,7 @@ public class Log {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String container;
+    private String service;
     @Enumerated(EnumType.STRING)
     private LogLevel logLevel;
     @Column(nullable = false, columnDefinition = "TEXT")

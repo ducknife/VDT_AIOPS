@@ -13,7 +13,7 @@ import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.model.Frame;
 import com.vdt.aiops.monitoring.logcollector.enums.LogLevel;
-import com.vdt.aiops.utils.MonitoredContainers;
+import com.vdt.aiops.utils.MonitoredServices;
 import com.vdt.aiops.utils.ServiceName;
 
 import jakarta.annotation.PostConstruct;
@@ -25,10 +25,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class DockerLogCollector {
+public class LogCollector {
 
     private final DockerClient dockerClient;
-    private final MonitoredContainers monitoredContainers;
+    private final MonitoredServices monitoredServices;
     private final LogRepository logRepository;
     /* must use ConcurrentLinkedQueue because it's thread-safe */
     private final ConcurrentLinkedQueue<Log> buffer = new ConcurrentLinkedQueue<>();
@@ -36,13 +36,13 @@ public class DockerLogCollector {
     /* start all stream for all containers */
     @PostConstruct
     public void startAll() {
-        monitoredContainers.list().stream()
+        monitoredServices.list().stream()
                 .forEach(c -> {
-                    String containerId = c.getId();
-                    String containerName = ServiceName.serviceName(c);
+                    String id = c.getId();
+                    String name = ServiceName.serviceName(c);
                     Thread.ofVirtual()
-                            .name("log-" + containerName)
-                            .start(() -> streamContainer(containerId, containerName));
+                            .name("log-" + name)
+                            .start(() -> streamContainer(id, name));
                 });
     }
 
@@ -66,9 +66,9 @@ public class DockerLogCollector {
     }
 
     /* Stream logs by container id and name */
-    private void streamContainer(String containerId, String containerName) {
+    private void streamContainer(String id, String name) {
         try {
-            dockerClient.logContainerCmd(containerId)
+            dockerClient.logContainerCmd(id)
                     .withFollowStream(true) /* stream */
                     .withStdOut(true) /* get normal logs */
                     .withStdErr(true) /* get error logs */
@@ -81,7 +81,7 @@ public class DockerLogCollector {
                                 return;
                             LogLevel logLevel = parseLevel(line);
                             Log entry = Log.builder()
-                                    .container(containerName)
+                                    .service(name)
                                     .logLevel(logLevel)
                                     .message(line)
                                     .loggedAt(Instant.now())

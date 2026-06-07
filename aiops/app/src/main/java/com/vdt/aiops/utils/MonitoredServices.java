@@ -12,7 +12,7 @@ import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
-public class MonitoredContainers {
+public class MonitoredServices {
     private final DockerClient dockerClient;
     private final String MONITORED_SYSTEM = "aiops-sim";
 

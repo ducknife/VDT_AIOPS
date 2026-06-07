@@ -9,7 +9,7 @@ import java.util.List;
 
 public interface LogRepository extends JpaRepository<Log, Long> {
 
-    List<Log> findByContainerAndLoggedAtBetween(String container, Instant from, Instant to);
+    List<Log> findByServiceAndLoggedAtBetween(String service, Instant from, Instant to);
 
-    List<Log> findByContainerAndLogLevelAndLoggedAtBetween(String container, LogLevel logLevel, Instant from, Instant to);
+    List<Log> findByServiceAndLogLevelAndLoggedAtBetween(String service, LogLevel logLevel, Instant from, Instant to);
 }

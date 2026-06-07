@@ -9,7 +9,6 @@ import java.util.Set;
 import com.vdt.aiops.topology.enums.ServiceRole;
 
 /* Graph of services */
-
 public class ServiceGraph {
     private final Map<String, ServiceNode> nodes; /* nodes of graph */
     private final Map<String, Set<String>> downstream; /* dependencies — services that A depends on → root-cause candidates */
