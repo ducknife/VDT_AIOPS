@@ -1,4 +1,6 @@
 spring:
+  config:
+    import: optional:file:.env[.properties]   # nạp aiops/app/.env -> ANTHROPIC_API_KEY thành property
   application:
     name: aiops
   main:
@@ -29,11 +31,11 @@ spring:
 # ── Spring AI: Claude (Anthropic) ─────────────────────────────────────────
 spring.ai:
   anthropic:
-    api-key: ${ANTHROPIC_API_KEY}
+    api-key: ${ANTHROPIC_API_KEY:}
     chat:
       options:
         model: claude-sonnet-4-6
-        max-tokens: 4096
+        max-tokens: 8192
 
 # ── Web server (Tomcat) — cổng engine phục vụ WebSocket/REST cho React Ink TUI ──
 server:
@@ -45,6 +47,10 @@ docker:
 
 # ── AIOps tuning ──────────────────────────────────────────────────────────
 aiops:
+  agent: 
+    max-turns: 8
+    max-attempts: 3
+    max-concurrent: 2 
   anomaly:
     rules:
       # ── redis ──

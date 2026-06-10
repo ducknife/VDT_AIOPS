@@ -1,5 +1,6 @@
 package com.vdt.aiops.monitoring.alertmanager;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -14,4 +15,6 @@ public interface AlertRepository extends JpaRepository<Alert, Long> {
     List<Alert> findByActiveTrue();
 
     List<Alert> findByActiveTrueAndStatus(AlertStatus status);
+
+    List<Alert> findAllByIdIn(Collection<Long> ids);
 }

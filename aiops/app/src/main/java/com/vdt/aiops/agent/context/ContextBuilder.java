@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 import com.vdt.aiops.config.properties.AiopsProperties;
-import com.vdt.aiops.monitoring.alertmanager.Alert;
+import com.vdt.aiops.monitoring.alertmanager.AlertGroup;
 import com.vdt.aiops.monitoring.logcollector.Log;
 import com.vdt.aiops.monitoring.logcollector.LogGroup;
 import com.vdt.aiops.monitoring.logcollector.LogRepository;
@@ -22,6 +22,7 @@ import com.vdt.aiops.monitoring.metricscraper.MetricsOfService;
 import com.vdt.aiops.topology.ServiceGraph;
 import com.vdt.aiops.topology.ServiceGraphBuilder;
 import com.vdt.aiops.topology.enums.ServiceRole;
+import com.vdt.aiops.utils.AlertUtils;
 
 import lombok.RequiredArgsConstructor;
 
@@ -38,18 +39,18 @@ public class ContextBuilder {
         private final LogRepository logRepository;
         private final LogTemplateExtractor logTemplateExtractor;
 
-        public ContextBundle build(Alert alert) {
+        public ContextBundle build(AlertGroup group) {
                 // WINDOW METADATA
                 Long win = aiopsProperties.getContext().getLogWindowMinutes();
-                Instant from = alert.getDetectedAt().minus(win, ChronoUnit.MINUTES);
-                Instant to = alert.getDetectedAt().plus(win, ChronoUnit.MINUTES);
+                Instant from = AlertUtils.earliest(group.getAlerts()).minus(win, ChronoUnit.MINUTES);
+                Instant to = AlertUtils.latest(group.getAlerts()).plus(win, ChronoUnit.MINUTES);
 
                 // GRAPH + SCOPE
                 ServiceGraph serviceGraph = serviceGraphBuilder.getGraph();
-                String focus = alert.getService();
+                String focus = group.getRootCandidate();
                 Set<String> down = serviceGraph.downstream(focus);
                 Set<String> scope = new LinkedHashSet<>();
-                scope.add(focus);
+                group.getAlerts().forEach(a -> scope.add(a.getService()));
                 scope.addAll(down);
 
                 // GRAPH VIEW (map service -> role)
@@ -76,10 +77,8 @@ public class ContextBuilder {
                                                 s -> curate(s, from, to)));
 
                 return ContextBundle.builder()
-                                .service(focus)
-                                .type(alert.getType())
-                                .message(alert.getMessage())
-                                .detectedAt(alert.getDetectedAt())
+                                .focus(focus)
+                                .alerts(group.getAlerts())
                                 .windowFrom(from)
                                 .windowTo(to)
                                 .focusRole(serviceGraph.role(focus))

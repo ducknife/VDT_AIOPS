@@ -6,9 +6,9 @@
 <title>VDT-AIOps — Kiến trúc &amp; Hạ tầng</title>
 <style>
   :root{
-    --bg:#0d1117; --panel:#161b22; --panel2:#1c2330; --border:#30363d;
-    --text:#c9d1d9; --muted:#8b949e; --accent:#58a6ff; --accent2:#7ee787;
-    --warn:#f0883e; --danger:#f85149; --purple:#bc8cff; --yellow:#e3b341;
+    --bg:#ffffff; --panel:#f2f7fd; --panel2:#e6f0fb; --border:#cfe0f5;
+    --text:#13243d; --muted:#5b6b82; --accent:#1f6feb; --accent2:#0969da;
+    --warn:#bc6a1e; --danger:#cf222e; --purple:#8250df; --yellow:#9a6700;
     --mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
   }
   *{box-sizing:border-box}
@@ -17,29 +17,29 @@
     line-height:1.65;font-size:15px}
   .wrap{max-width:1100px;margin:0 auto;padding:40px 24px 80px}
   header.top{border-bottom:1px solid var(--border);padding-bottom:20px;margin-bottom:32px}
-  h1{font-size:28px;margin:0 0 6px;color:#fff}
+  h1{font-size:28px;margin:0 0 6px;color:#0b3d91}
   h1 .v{font-size:13px;color:var(--muted);font-weight:400}
   .sub{color:var(--muted);font-size:14px}
-  h2{font-size:20px;color:#fff;margin:44px 0 14px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+  h2{font-size:20px;color:var(--accent);margin:44px 0 14px;padding-bottom:8px;border-bottom:1px solid var(--border)}
   h3{font-size:16px;color:var(--accent);margin:26px 0 10px}
   p{margin:10px 0}
   code{font-family:var(--mono);background:var(--panel2);padding:1px 6px;border-radius:5px;
     font-size:13px;color:var(--accent2);border:1px solid var(--border)}
-  pre{background:#010409;border:1px solid var(--border);border-radius:10px;padding:18px;
-    overflow-x:auto;font-family:var(--mono);font-size:12.5px;line-height:1.5;color:#c9d1d9}
-  .diagram{background:#010409;border:1px solid var(--border);border-radius:10px;padding:20px;
+  pre{background:#f5f9ff;border:1px solid var(--border);border-radius:10px;padding:18px;
+    overflow-x:auto;font-family:var(--mono);font-size:12.5px;line-height:1.5;color:#13243d}
+  .diagram{background:#f5f9ff;border:1px solid var(--border);border-radius:10px;padding:20px;
     overflow-x:auto}
   .diagram pre{border:0;padding:0;background:transparent;font-size:12px}
   table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.5px}
   th,td{border:1px solid var(--border);padding:9px 12px;text-align:left;vertical-align:top}
-  th{background:var(--panel2);color:#fff;font-weight:600}
+  th{background:var(--accent);color:#fff;font-weight:600}
   tr:nth-child(even) td{background:var(--panel)}
   .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;
     padding:18px 22px;margin:16px 0}
   .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
   .tag{display:inline-block;font-size:11px;font-family:var(--mono);padding:2px 8px;border-radius:20px;
     border:1px solid var(--border);margin-left:6px}
-  .t-done{color:var(--accent2);border-color:#2ea04366;background:#2ea04314}
+  .t-done{color:#1a7f37;border-color:#2ea04366;background:#2ea04314}
   .t-wip{color:var(--yellow);border-color:#e3b34166;background:#e3b34114}
   .t-todo{color:var(--muted);border-color:var(--border)}
   .t-plan{color:var(--purple);border-color:#bc8cff66;background:#bc8cff14}
@@ -47,7 +47,7 @@
     border-radius:0 8px 8px 0;margin:14px 0}
   .note.warn{border-left-color:var(--warn)}
   .note.danger{border-left-color:var(--danger)}
-  .note b{color:#fff}
+  .note b{color:#0b3d91}
   ul{margin:8px 0;padding-left:22px}
   li{margin:5px 0}
   .legend span{font-size:12px;margin-right:14px}
@@ -57,7 +57,7 @@
     align-items:center;justify-content:center;font-weight:700;color:#fff;font-family:var(--mono)}
   .p1{background:#1f6feb}.p2{background:#8957e5}.p3{background:#bb8009}.p4{background:#da3633}
   .phase .body{flex:1}
-  .phase .body b{color:#fff}
+  .phase .body b{color:#0b3d91}
   footer{margin-top:60px;padding-top:20px;border-top:1px solid var(--border);
     color:var(--muted);font-size:12.5px}
   a{color:var(--accent);text-decoration:none}
@@ -68,7 +68,7 @@
 <div class="wrap">
 
   <header class="top">
-    <h1>VDT-AIOps — Kiến trúc &amp; Hạ tầng <span class="v">v1 · cập nhật 2026-05-30</span></h1>
+    <h1>VDT-AIOps — Kiến trúc &amp; Hạ tầng <span class="v">v1.2 · cập nhật 2026-06-08</span></h1>
     <p class="sub">Tài liệu sống mô tả toàn bộ hệ thống: nửa <b>bị giám sát</b> (simulation stack) và nửa <b>đi giám sát</b> (AIOps app + observability). Cập nhật theo tiến độ phát triển.</p>
     <p class="legend">
       <span class="tag t-done">DONE</span> đã hoàn thiện
@@ -164,7 +164,51 @@
   </div>
 
   <!-- ============================================================ -->
-  <h2>5. AI Agent — vòng lặp Query 4 pha <span class="tag t-plan">PLANNED</span></h2>
+  <h2>5. Alert pipeline — phát hiện → gom nhóm → debounce dispatch <span class="tag t-done">DONE</span></h2>
+  <p>Hai vòng lặp <code>@Scheduled</code> độc lập, giao tiếp <b>qua DB</b> (không gọi thẳng nhau):</p>
+  <div class="diagram">
+<pre>
+VÒNG A (5s)  AnomalyDetector.scan() → AlertManager.handle()  → GHI alert vào DB
+                                                                    │ (DB = điểm gặp)
+VÒNG B (5s)  CorrelationTick.dispatchTick() ← ĐỌC alert active ─────┘
+             → correlate() (DSU) → group → debounce chín? → dispatch + mark INVESTIGATING
+</pre>
+  </div>
+
+  <h3>5.1 Detection &amp; Alert lifecycle <span class="tag t-done">DONE</span></h3>
+  <ul>
+    <li><b>AnomalyDetector</b> (5s): duyệt rule (<code>aiops.anomaly.rules</code>), so <code>breached(value)</code>. Vượt ngưỡng → <code>DetectedAnomaly</code>; đo được khỏe → nạp <code>healthyKeys</code>.</li>
+    <li><b>AlertManager.handle</b>: tạo + dedup (<code>findByServiceAndTypeAndActiveTrue</code>); <b>resolve CHỈ khi đo được HEALTHY</b> — không resolve khi tín hiệu null/UNKNOWN (tránh false-resolve lúc service chết, vd <code>pg_up</code> biến mất).</li>
+  </ul>
+
+  <h3>5.2 Mô hình trạng thái 2 trục (active × status) <span class="tag t-done">DONE</span></h3>
+  <p>Hai trục <b>vuông góc</b>, hai tiến trình ghi độc lập:</p>
+  <table>
+    <tr><th></th><th>status=ACTIVE</th><th>INVESTIGATING</th><th>DIAGNOSED</th></tr>
+    <tr><td><b>active=true</b> (còn cháy)</td><td>① chưa gửi ← input correlate</td><td>② agent đang xử</td><td>③ đã chẩn, vẫn cháy</td></tr>
+    <tr><td><b>active=false</b> (đã hồi)</td><td>④ blip hồi trước khi gửi</td><td>⑤ hồi khi đang xử</td><td>⑥ đã chẩn &amp; tắt</td></tr>
+  </table>
+  <p class="muted"><code>active</code> do Detector ghi (liveness) · <code>status</code> do Agent ghi (tiến độ điều tra). Correlate lấy <b>giao ô ①</b> = <code>findByActiveTrueAndStatus(ACTIVE)</code> — vừa chống gửi lặp (②③) vừa tự dập blip nhất thời (④).</p>
+
+  <h3>5.3 AlertCorrelator — gom nhóm thô (DSU) <span class="tag t-done">DONE</span></h3>
+  <ul>
+    <li><b>related(a,b)</b>: cùng/kề service (vô hướng: downstream ∪ upstream) <b>VÀ</b> cách nhau ≤ 5 phút.</li>
+    <li><b>DSU connected-components</b> gom alert liên thông thành <code>AlertGroup</code>.</li>
+    <li><b>rootCandidate</b> = service được phụ thuộc nhiều nhất <i>trong cụm</i> (<code>max |upstream(s) ∩ cụm|</code>).</li>
+  </ul>
+  <div class="note warn"><b>Đánh đổi cố ý — gom THÔ:</b> victim chung (node-api phụ thuộc cả redis &amp; postgres) có thể bắc cầu 2 sự cố độc lập thành 1 cụm. Chấp nhận, vì topology đơn lẻ không quy được thủ phạm — <b>agent sẽ tách</b> 1 AlertGroup → <code>List&lt;Incident&gt;</code> bằng bằng chứng log/metric.</div>
+
+  <h3>5.4 CorrelationTick — debounce + dedup <span class="tag t-done">DONE</span></h3>
+  <p>Mỗi tick <b>tính lại từ đầu</b> (stateless, KHÔNG cache; mốc derive từ <code>detected_at</code>):</p>
+  <ul>
+    <li><code>updatedAt = max(detected_at)</code>, <code>createdAt = min(detected_at)</code> trong cụm.</li>
+    <li><b>Dispatch khi:</b> <code>(now − updatedAt ≥ quietWindow 30s)</code> <b>HOẶC</b> <code>(now − createdAt ≥ maxWait 120s)</code>.</li>
+    <li>Dispatch → set <code>status=INVESTIGATING</code> + <code>saveAll</code> → tick sau không lấy lại (dedup, verify live: 22 tick / 1 dispatch).</li>
+  </ul>
+  <p class="muted">quietWindow = "cascade đã lắng" (trigger thường) · maxWait = trần chống đói khi alert rỉ rả. Phải <b>poll</b> (<code>@Scheduled</code>) vì debounce phát hiện <i>sự im lặng</i> — non-event, không tự sinh trigger.</p>
+
+  <!-- ============================================================ -->
+  <h2>6. AI Agent — vòng lặp Query 4 pha <span class="tag t-plan">PLANNED</span></h2>
   <p>Hàm <code>Query</code> <b>không</b> chỉ gọi API một lần — nó là một <b>agentic loop</b> 4 pha, lặp đến khi đạt điều kiện dừng:</p>
 
   <div class="card">
@@ -197,7 +241,7 @@
     </div>
   </div>
 
-  <h3>Service Dependency Graph — truy vết service liên quan <span class="tag t-plan">PLANNED</span></h3>
+  <h3>Service Dependency Graph — truy vết service liên quan <span class="tag t-done">DONE</span></h3>
   <p>Để pha 1 biết gom context của <i>những service nào</i>, dựng <code>ServiceGraph</code> có hướng, <b>auto-discover từ Docker</b>:</p>
   <ul>
     <li><b>Nguồn A</b> — compose labels: <code>com.docker.compose.service</code>, <code>com.docker.compose.depends_on</code></li>
@@ -211,7 +255,7 @@
   <p class="muted">Node <code>*-exporter</code> gắn role EXPORTER → loại khỏi traversal để không gây nhiễu. AI truy cập graph theo kiểu <b>hybrid</b>: ContextBuilder pre-build 1-hop, thêm <code>@Tool GetServiceDependencies</code> để AI tự đào sâu.</p>
 
   <!-- ============================================================ -->
-  <h2>6. Nút thắt cố ý &amp; kịch bản mô phỏng <span class="tag t-done">DONE</span></h2>
+  <h2>7. Nút thắt cố ý &amp; kịch bản mô phỏng <span class="tag t-done">DONE</span></h2>
   <p>Hệ được thiết kế để <i>hỏng theo kiểu thật</i>, điều khiển qua script ở <code>aiops/infra/scripts/</code>:</p>
   <table>
     <tr><th>Script</th><th>Cơ chế trigger</th><th>Nút thắt</th></tr>
@@ -223,7 +267,7 @@
   </table>
 
   <!-- ============================================================ -->
-  <h2>7. Quyết định kiến trúc (Decision log)</h2>
+  <h2>8. Quyết định kiến trúc (Decision log)</h2>
   <div class="note">
     <b>2026-05-30 — Log lưu PostgreSQL (không dùng Elasticsearch).</b>
     Chốt dùng <code>postgres-aiops</code> cho cả log lẫn metric/state để <b>đồng bộ một nguồn dữ liệu</b>. ES nêu trong CLAUDE.md được gác lại — không wire trong phạm vi hiện tại.
@@ -237,8 +281,25 @@
     Kênh TUI⇄Backend chốt là <b>WebSocket</b> (full-duplex, hợp agent tương tác). Hệ quả: <code>spring-boot-starter-websocket</code> + bỏ exclusion Tomcat + <code>web-application-type</code> từ <code>none</code> → <code>servlet</code>. Hai mục "no Tomcat" và "web-application-type=none" trong CLAUDE.md <b>không còn áp dụng</b> cho kiến trúc client-server. Dùng <b>raw TextWebSocketHandler</b> + protocol JSON tự định nghĩa (KHÔNG STOMP). Protocol là discriminated-union theo <code>type</code> (phase / token / tool_start / tool_result / alert / done / error) khớp agent loop 4 pha.
   </div>
 
+  <div class="note">
+    <b>2026-06-08 — Trạng thái alert 2 trục (active × status), không gộp 1 enum.</b>
+    <code>active</code> (liveness, Detector ghi) và <code>status</code> ACTIVE→INVESTIGATING→DIAGNOSED (điều tra, Agent ghi) là <b>2 chiều độc lập</b> — cần cả hai để biểu diễn được ô ③ ("đã chẩn mà vẫn cháy") khác ⑥ ("đã chẩn &amp; tắt"). Gộp 1 enum sẽ mất state này.
+  </div>
+  <div class="note">
+    <b>2026-06-08 — Correlation gom THÔ + Agent tách incident.</b>
+    AlertCorrelator (DSU) gom rộng, chấp nhận over-merge do "victim bridge". Tầng ngữ nghĩa (agent) mới là trọng tài: 1 <code>AlertGroup</code> → <code>List&lt;Incident&gt;</code>. Lý do: gom dư chỉ tốn 1 lần điều tra (rẻ); gom thiếu vỡ 1 sự cố thành nhiều điều tra trùng (tệ hơn).
+  </div>
+  <div class="note">
+    <b>2026-06-08 — Debounce dispatch: stateless recompute, KHÔNG cache.</b>
+    CorrelationTick tính lại group mỗi tick từ DB; mốc <code>createdAt/updatedAt</code> derive từ <code>detected_at</code> (không lưu riêng). Dispatch khi <code>now−updatedAt ≥ quietWindow(30s)</code> HOẶC <code>now−createdAt ≥ maxWait(120s)</code>. Bỏ cache (Caffeine/Redis) vì recompute trên n nhỏ là miễn phí và <b>sống sót qua restart</b>; dedup bằng <code>status</code> ở DB.
+  </div>
+  <div class="note danger">
+    <b>2026-06-08 — Bài học Flyway: KHÔNG sửa migration đã apply.</b>
+    Sửa V7 sau khi đã chạy → đổi checksum → <code>Validate failed: checksum mismatch</code>. Khắc phục: idempotent <code>ADD COLUMN IF NOT EXISTS</code> + xóa dòng V7 trong <code>flyway_schema_history</code> → re-apply sạch. <b>Quy tắc:</b> migration đã apply = bất biến; cần đổi thì thêm <code>V8</code>.
+  </div>
+
   <!-- ============================================================ -->
-  <h2>8. Cân nhắc khi đóng app vào container (tương lai)</h2>
+  <h2>9. Cân nhắc khi đóng app vào container (tương lai)</h2>
   <div class="note warn">
     <b>Phần lớn chỉ là chỉnh config — nhưng có 1 điểm không chỉ là cổng: quyền truy cập Docker API.</b>
   </div>
@@ -252,19 +313,25 @@
   <p><b>Khuyến nghị:</b> externalize hết qua <b>env var</b> ngay từ giờ → lúc container hoá chỉ đổi env, <b>không sửa code</b>. <code>ServiceGraph</code> auto-discover không bị ảnh hưởng vì chỉ phụ thuộc <code>DOCKER_HOST</code>, không phụ thuộc localhost.</p>
 
   <!-- ============================================================ -->
-  <h2>9. Trạng thái thành phần</h2>
+  <h2>10. Trạng thái thành phần</h2>
   <table>
-    <tr><th>Thành phần</th><th>File</th><th>Trạng thái</th></tr>
-    <tr><td>DockerLogCollector</td><td><code>logcollector/DockerLogCollector.java</code></td><td><span class="tag t-done">DONE</span></td></tr>
-    <tr><td>MetricScraper</td><td><code>metricscraper/MetricScraper.java</code></td><td><span class="tag t-done">DONE</span></td></tr>
-    <tr><td>GetContainerLogs (@Tool)</td><td><code>tools/read/GetContainerLogs.java</code></td><td><span class="tag t-done">DONE</span></td></tr>
-    <tr><td>GetContainerMetrics (@Tool)</td><td><code>tools/read/GetContainerMetrics.java</code></td><td><span class="tag t-wip">WIP</span></td></tr>
-    <tr><td>ServiceGraph + Builder</td><td><span class="muted">(chưa tạo)</span></td><td><span class="tag t-plan">PLANNED</span></td></tr>
-    <tr><td>GetServiceDependencies (@Tool)</td><td><span class="muted">(chưa tạo)</span></td><td><span class="tag t-plan">PLANNED</span></td></tr>
-    <tr><td>Normalize (anomaly detection)</td><td><code>alerts/Normalize.java</code></td><td><span class="tag t-todo">TODO</span></td></tr>
-    <tr><td>ContextBuilder</td><td><code>contextbuilder/ContextBuilder.java</code></td><td><span class="tag t-todo">TODO</span></td></tr>
-    <tr><td>Query (agent loop 4 pha)</td><td><code>agent/Query.java</code></td><td><span class="tag t-plan">PLANNED</span></td></tr>
-    <tr><td>GetActiveAlerts / GetIncidentHistory / InspectContainer / SaveIncidentReport</td><td><code>tools/...</code></td><td><span class="tag t-todo">TODO</span></td></tr>
+    <tr><th>Thành phần</th><th>File (rel. <code>…/com/vdt/aiops/</code>)</th><th>Trạng thái</th></tr>
+    <tr><td>LogCollector (stream + flush)</td><td><code>monitoring/logcollector/LogCollector.java</code></td><td><span class="tag t-done">DONE</span></td></tr>
+    <tr><td>LogTemplateExtractor (gom log theo template)</td><td><code>monitoring/logcollector/LogTemplateExtractor.java</code></td><td><span class="tag t-done">DONE</span></td></tr>
+    <tr><td>MetricCollector + PrometheusClient</td><td><code>monitoring/metricscraper/*.java</code></td><td><span class="tag t-done">DONE</span></td></tr>
+    <tr><td>ServiceGraph + Builder (auto-discover)</td><td><code>topology/ServiceGraph.java</code>, <code>ServiceGraphBuilder.java</code></td><td><span class="tag t-done">DONE</span></td></tr>
+    <tr><td>AnomalyDetector (scan 5s, rules)</td><td><code>monitoring/detection/AnomalyDetector.java</code></td><td><span class="tag t-done">DONE</span></td></tr>
+    <tr><td>AlertManager (create / dedup / resolve)</td><td><code>monitoring/alertmanager/AlertManager.java</code></td><td><span class="tag t-done">DONE</span></td></tr>
+    <tr><td>Alert + AlertStatus enum + <code>V7</code></td><td><code>monitoring/alertmanager/Alert.java</code>, <code>enums/AlertStatus.java</code></td><td><span class="tag t-done">DONE</span></td></tr>
+    <tr><td>AlertCorrelator (DSU gom nhóm)</td><td><code>monitoring/alertmanager/AlertCorrelator.java</code></td><td><span class="tag t-done">DONE</span></td></tr>
+    <tr><td>CorrelationTick (debounce + dedup)</td><td><code>monitoring/alertmanager/CorrelationTick.java</code></td><td><span class="tag t-done">DONE</span></td></tr>
+    <tr><td>ContextBuilder + ContextBundle (<code>build(AlertGroup)</code>)</td><td><code>agent/context/*.java</code></td><td><span class="tag t-done">DONE</span></td></tr>
+    <tr><td>AutoCompact (kiểm tra cần nén context)</td><td><code>agent/context/compact/AutoCompact.java</code></td><td><span class="tag t-wip">WIP</span></td></tr>
+    <tr><td>Query (agent loop 4 pha)</td><td><code>agent/loop/Query.java</code></td><td><span class="tag t-plan">PLANNED</span></td></tr>
+    <tr><td>@Tool read (GetServiceLogs/Metrics/Dependencies, QueryMetrics, GetActiveAlerts, GetIncidentHistory, InspectContainer)</td><td><code>tools/read/*.java</code></td><td><span class="tag t-wip">WIP</span> (skeleton)</td></tr>
+    <tr><td>SaveIncidentReport (@Tool write)</td><td><code>tools/write/SaveIncidentReport.java</code></td><td><span class="tag t-wip">WIP</span> (skeleton)</td></tr>
+    <tr><td>Incident entity + quan hệ incident↔alert</td><td><span class="muted">(chưa tạo — bước kế)</span></td><td><span class="tag t-plan">PLANNED</span></td></tr>
+    <tr><td>dispatch() → ContextBuilder → Agent (cắm thật)</td><td><code>monitoring/alertmanager/CorrelationTick.java</code> (stub)</td><td><span class="tag t-todo">TODO</span></td></tr>
   </table>
 
   <footer>
@@ -272,6 +339,7 @@
     <ul>
       <li><b>2026-05-30 (v1)</b> — Tạo tài liệu. Ghi nhận: log → PostgreSQL; thiết kế Query 4 pha; ServiceGraph auto-discover; cân nhắc container hoá.</li>
       <li><b>2026-05-30 (v1.1)</b> — Tách client-server: TUI React Ink (host, npm) ⇄ Java engine always-on. Chốt transport WebSocket (raw handler + JSON protocol khớp 4 pha). Đảo ràng buộc no-Tomcat/web-type-none. Externalize config DB+Prometheus ra env var (12-Factor III) + .gitignore chặn .env.</li>
+      <li><b>2026-06-08 (v1.2)</b> — Hoàn thiện <b>Alert pipeline</b> (mục 5): AnomalyDetector → AlertManager (resolve khi-HEALTHY) → AlertCorrelator (DSU) → CorrelationTick (debounce quietWindow/maxWait + dedup, verify live). Mô hình trạng thái 2 trục <code>active × status</code> (enum AlertStatus, migration V7). ServiceGraph + ContextBuilder <code>build(AlertGroup)</code> + ContextBundle mang cả cụm. Decision log: gom-thô-agent-tách, debounce-stateless-no-cache, bài học Flyway checksum. Đổi theme tài liệu sang xanh + trắng. Tiếp theo: Incident schema + agent loop.</li>
     </ul>
     <p class="muted">Tài liệu sống — cập nhật khi kiến trúc thay đổi. Đường dẫn file Java tương đối tới <code>aiops/app/src/main/java/com/vdt/aiops/</code>.</p>
   </footer>

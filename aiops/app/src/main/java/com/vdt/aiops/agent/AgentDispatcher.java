@@ -1,0 +1,56 @@
+package com.vdt.aiops.agent;
+
+import java.util.List;
+import java.util.concurrent.Semaphore;
+
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Component;
+
+import com.vdt.aiops.agent.context.ContextBuilder;
+import com.vdt.aiops.agent.context.ContextBundle;
+import com.vdt.aiops.agent.incident.IncidentReport;
+import com.vdt.aiops.agent.loop.Query;
+import com.vdt.aiops.config.properties.AiopsProperties;
+import com.vdt.aiops.monitoring.alertmanager.AlertGroup;
+import com.vdt.aiops.utils.SaveIncidentReport;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+/* investigating -> save incident */
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class AgentDispatcher {
+
+    private final ContextBuilder contextBuilder;
+    private final Query agentLoop;
+    private final SaveIncidentReport saveIncidentReport;
+    private final AiopsProperties aiopsProperties;
+    private final Semaphore investigationSemaphore;
+
+    @Async("investigationExecutor")
+    public void investigate(AlertGroup group) {
+        String root = group.getRootCandidate();
+        long t0 = System.currentTimeMillis();
+        try {
+            ContextBundle bundle = contextBuilder.build(group);
+            investigationSemaphore.acquire();
+            try {
+                List<IncidentReport> reports = agentLoop.investigate(bundle);
+                long ms = System.currentTimeMillis() - t0;
+                saveIncidentReport.persist(reports, group.getAlerts(), ms);
+                log.info("Group[root={}] -> {} incident(s) in {}ms", root, reports.size(), ms);
+            } finally {
+                investigationSemaphore.release();
+            }
+        } catch (InterruptedException e) {
+            log.warn("investigate interrupted before running!, group[root={}]", root);
+            Thread.currentThread().interrupt();
+        } catch (Exception e) {
+            List<Long> ids = group.getAlerts().stream().map(a -> a.getId()).toList();
+            saveIncidentReport.markFailure(ids, aiopsProperties.getAgent().getMaxAttempts());
+            log.error("Investigate FAILED group[root={}]: {}", root, e.getMessage());
+        }
+    }
+}

@@ -1,6 +1,7 @@
 const express = require('express');
 const { Pool }  = require('pg');
 const { createClient } = require('redis');
+const promClient = require('prom-client');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -25,17 +26,37 @@ const redisClient = createClient({ url: process.env.REDIS_URL });
 redisClient.on('error', (err) => console.error('[REDIS ERROR]', err.message));
 redisClient.connect();
 
-// ─── Metrics counters (cho Prometheus scrape) ────────────────────────────────
-const metrics = { requests: 0, errors: 0, totalLatencyMs: 0 };
+// ─── Prometheus metrics (prom-client) ─────────────────────────────────────────
+// Chuan SRE: counter cho request/error (rate()), HISTOGRAM cho latency (histogram_quantile → P99).
+const register = new promClient.Registry();
+promClient.collectDefaultMetrics({ register }); // process_*, nodejs_* (vd eventloop lag)
+
+const httpRequestsTotal = new promClient.Counter({
+  name: 'http_requests_total',
+  help: 'Tong so HTTP request da xu ly (counter monotonic → rate())',
+  registers: [register],
+});
+const httpErrorsTotal = new promClient.Counter({
+  name: 'http_errors_total',
+  help: 'Tong so HTTP response 5xx (counter monotonic → rate())',
+  registers: [register],
+});
+const httpRequestDuration = new promClient.Histogram({
+  name: 'http_request_duration_seconds',
+  help: 'Do tre HTTP request (giay). Phan bo theo bucket → histogram_quantile cho P50/P90/P99',
+  // bucket bao quanh nguong 2s + gia tri test 3s de noi suy P99 chinh xac gan nguong
+  buckets: [0.01, 0.05, 0.1, 0.25, 0.5, 1, 2, 3, 5, 10],
+  registers: [register],
+});
 
 // ─── Request logger middleware ────────────────────────────────────────────────
 app.use((req, res, next) => {
-  const start = Date.now();
+  const endTimer = httpRequestDuration.startTimer(); // bat dau do
   res.on('finish', () => {
-    const ms = Date.now() - start;
-    metrics.requests++;
-    metrics.totalLatencyMs += ms;
-    if (res.statusCode >= 500) metrics.errors++;
+    const seconds = endTimer();           // observe vao histogram + tra ve giay
+    httpRequestsTotal.inc();
+    if (res.statusCode >= 500) httpErrorsTotal.inc();
+    const ms = (seconds * 1000).toFixed(0);
     const level = res.statusCode >= 500 ? '[ERROR]'
                 : res.statusCode >= 400 ? '[WARN]'
                 : '[INFO]';
@@ -46,17 +67,10 @@ app.use((req, res, next) => {
 
 // ─── Endpoints ────────────────────────────────────────────────────────────────
 
-// Prometheus metrics — AIOps scrape endpoint này mỗi 15 giây
-app.get('/metrics', (_req, res) => {
-  const avgLatency = metrics.requests > 0
-    ? (metrics.totalLatencyMs / metrics.requests).toFixed(2)
-    : 0;
-  res.set('Content-Type', 'text/plain; version=0.0.4');
-  res.send([
-    `http_requests_total ${metrics.requests}`,
-    `http_errors_total ${metrics.errors}`,
-    `http_latency_avg_ms ${avgLatency}`,
-  ].join('\n'));
+// Prometheus metrics — AIOps scrape endpoint này. prom-client tu xuat dung dinh dang.
+app.get('/metrics', async (_req, res) => {
+  res.set('Content-Type', register.contentType);
+  res.end(await register.metrics());
 });
 
 // Health check — AIOps filter endpoint này như "noise" (không index vào ES)
@@ -108,6 +122,14 @@ app.get('/api/compute', (req, res) => {
   let sum = 0;
   for (let i = 0; i < n; i++) sum += Math.random();
   res.json({ result: sum, iterations: n });
+});
+
+// Chậm BẤT ĐỒNG BỘ — chờ I/O giả lập, KHÔNG chặn event loop.
+// Dùng để simulate HIGH_LATENCY mà service vẫn sống (/metrics, /health vẫn trả lời → up=1).
+app.get('/api/slow', async (req, res) => {
+  const ms = parseInt(req.query.ms || '3000', 10);
+  await new Promise((r) => setTimeout(r, ms));
+  res.json({ slept: ms });
 });
 
 // Endpoint trả lỗi ngẫu nhiên — dùng để simulate error rate spike

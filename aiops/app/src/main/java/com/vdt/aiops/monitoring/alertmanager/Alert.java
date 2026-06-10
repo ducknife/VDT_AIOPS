@@ -20,7 +20,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /* Alert entity */
-@Table(name="alerts")
+@Table(name = "alerts")
 @Entity
 @Setter
 @Getter
@@ -48,4 +48,10 @@ public class Alert {
     @Column(name = "is_active")
     @Builder.Default
     private boolean active = true;
+
+    private Long incidentId;
+
+    @Builder.Default
+    @Column(name = "investigation_attempts", nullable = false)
+    private int investigationAttempts = 0;
 }

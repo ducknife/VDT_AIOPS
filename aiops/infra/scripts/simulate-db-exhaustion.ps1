@@ -1,10 +1,13 @@
 # simulate-db-exhaustion.ps1
-# SIM-03: PostgreSQL connection pool bi can kiet
-# Mo 15 ket noi dai (pg_sleep) vao postgres, nhieu hon node-api pool max (10).
-# Khi node-api co lay connection -> timeout -> 500 Internal Server Error.
+# SIM-03: PostgreSQL CAN KIET connection slot (server-side).
+# Postgres max_connections = 100. Mo ~85 ket noi dai (pg_sleep) -> chiem >80% slot
+# -> connUtilPercent > 80 -> DB_EXHAUSTION. Connection moi (ke ca node-api pool)
+# bat dau bi tu choi -> 500 that.
+#
+# Recover: .\recover.ps1 db-exhaustion   (kill cac pg_sleep)
 
 param(
-    [int]$BlockerConnections = 15,
+    [int]$BlockerConnections = 85,   # +baseline ~2 -> ~88/100 slot -> vuot 80%, van con headroom cho exporter
     [int]$BlockDurationSecs  = 25
 )
 
@@ -22,13 +25,10 @@ docker exec aiops-postgres psql -U appuser -d appdb -c `
 Write-Host ""
 Write-Host "[exhaust] Opening $BlockerConnections long-running connections (pg_sleep)..." -ForegroundColor Red
 
-$blockers = 1..$BlockerConnections | ForEach-Object {
-    $n   = $_
-    $dur = $BlockDurationSecs
-    Start-Job -ScriptBlock {
-        docker exec aiops-postgres psql -U appuser -d appdb `
-            -c "SELECT pg_sleep($using:dur), $using:n AS blocker_id;" 2>&1
-    }
+# Blocker DETACHED (docker exec -d) + pg_sleep dài -> giữ connection VĨNH VIỄN,
+# sống qua cả khi script thoát. Chỉ nhả khi .\recover.ps1 db-exhaustion
+1..$BlockerConnections | ForEach-Object {
+    docker exec -d aiops-postgres psql -U appuser -d appdb -c "SELECT pg_sleep(86400);" | Out-Null
 }
 
 Start-Sleep -Seconds 2
@@ -62,23 +62,8 @@ Write-Host ""
 Write-Host "[context] postgres logs:" -ForegroundColor Magenta
 docker logs aiops-postgres --tail 15 2>&1
 
-# Cho blocker tu giai phong
+# KHONG nha ngay: giu connection VINH VIEN cho AIOps detect + analyze
 Write-Host ""
-Write-Host "[wait] Waiting $BlockDurationSecs s for blocker connections to close..." -ForegroundColor Gray
-$blockers | Wait-Job | Out-Null
-$blockers | Remove-Job
-
-Write-Host ""
-Write-Host "[after] Connections after release:" -ForegroundColor Green
-docker exec aiops-postgres psql -U appuser -d appdb -c `
-    "SELECT count(*) AS active_conn FROM pg_stat_activity WHERE datname='appdb';" 2>&1
-
-Write-Host ""
-Write-Host "[verify] Calling API again (should be OK):" -ForegroundColor Green
-try {
-    $r = Invoke-WebRequest -Uri "http://localhost:8080/api/users" -UseBasicParsing -TimeoutSec 5
-    Write-Host "  $($r.StatusCode) -- RECOVERED" -ForegroundColor Green
-} catch {
-    Write-Host "  $($_.Exception.Message)" -ForegroundColor Red
-}
+Write-Host "[hold] $BlockerConnections connections HELD (vĩnh viễn) so AIOps can detect + analyze." -ForegroundColor Red
+Write-Host "       Recover khi xong: .\recover.ps1 db-exhaustion   (hoặc .\recover.ps1 all)" -ForegroundColor Gray
 Write-Host ""

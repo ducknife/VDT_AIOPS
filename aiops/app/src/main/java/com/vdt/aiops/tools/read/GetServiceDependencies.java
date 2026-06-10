@@ -29,7 +29,7 @@ public class GetServiceDependencies {
     """)
     public String getDependencies(String service) {
         ServiceGraph graph = serviceGraphBuilder.getGraph();
-        return "Service: " + service + "[" + graph.role(service) + "]\n"
+        return "Service: " + service + " [" + graph.role(service) + "]\n"
             + "-depends on (downstream): " + graph.downstream(service) + "\n"
             + "-depended by (upstream): " + graph.upstream(service);
     }

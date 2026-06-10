@@ -2,6 +2,7 @@ package com.vdt.aiops.tools.read;
 
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -38,12 +39,19 @@ public class GetServiceLogs {
                     return "Invalid logLevel. Use INFO, WARN, or ERROR.";
                 }
             }
-            List<Log> logs = level == null ? logRepository.findByServiceAndLoggedAtBetween(service, from, to)
-                    : logRepository.findByServiceAndLogLevelAndLoggedAtBetween(service, level, from, to);
+            List<Log> logs = level == null
+                    ? logRepository.findTop100ByServiceAndLoggedAtBetweenOrderByLoggedAtDesc(service, from, to)
+                    : logRepository.findTop100ByServiceAndLogLevelAndLoggedAtBetweenOrderByLoggedAtDesc(service, level,
+                            from, to);
             if (logs.isEmpty()) {
                 return "No logs found for container: " + service;
             }
-            return "Service: " + service + " | Logs: " + logs.size() + "\n"
+            // repo returns newest-first; reverse to chronological for readability
+            Collections.reverse(logs);
+            String header = logs.size() == 100
+                    ? "Service: " + service + " | showing latest 100 logs (more exist - narrow the time window)\n"
+                    : "Service: " + service + " | Logs: " + logs.size() + "\n";
+            return header
                     + logs.stream()
                             .map(this::format)
                             .collect(Collectors.joining("\n"));

@@ -16,6 +16,6 @@ import lombok.Setter;
 @Builder
 public class ServiceNode {
     private String name;
-    private String containerId;
+    private String serviceId;
     private ServiceRole role;
 } 

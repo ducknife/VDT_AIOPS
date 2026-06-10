@@ -21,6 +21,7 @@ public class AiopsProperties {
     private Log log = new Log();
     private Anomaly anomaly = new Anomaly();
     private Correlation correlation = new Correlation();
+    private Agent agent = new Agent();
 
     @Getter
     @Setter
@@ -52,5 +53,13 @@ public class AiopsProperties {
     public static class Correlation {
         private int quietWindowSeconds;
         private int maxWaitSeconds;
+    }
+
+    @Getter
+    @Setter
+    public static class Agent {
+        private int maxTurns; 
+        private int maxAttempts;
+        private int maxConcurrent;
     }
 }

@@ -21,7 +21,7 @@ public class AlertManager {
     @Transactional
     public void handle(List<DetectedAnomaly> detectedAnomalies, Set<String> healthyKeys) {
 
-        // Step 1: create + dedub alerts
+        // Step 1: create + dedup alerts
         for (DetectedAnomaly d : detectedAnomalies) {
             Optional<Alert> existing = alertRepository.findByServiceAndTypeAndActiveTrue(d.getService(), d.getType());
             // if this is a new alert, else don't save because of dedup

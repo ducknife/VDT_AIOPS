@@ -56,17 +56,10 @@ try {
     Write-Host "  -> This is the anomaly signal AIOps uses to detect service-down"
 }
 
-# Step 5: Restart nginx
+# Step 5: KHONG restart ngay -- de nginx DOWN cho AIOps detect + analyze
 Write-Host ""
-Write-Host "[5/5] Restarting nginx (remediation)..." -ForegroundColor Green
-docker start aiops-nginx | Out-Null
-Start-Sleep -Seconds 3
-try {
-    Invoke-WebRequest -Uri "http://localhost:8080/health" -UseBasicParsing -TimeoutSec 5 | Out-Null
-    Write-Host "      nginx RECOVERED"
-} catch {
-    Write-Host "      nginx not yet responding -- wait a moment" -ForegroundColor Yellow
-}
+Write-Host "[5/5] nginx LEFT DOWN so AIOps can detect + analyze." -ForegroundColor Red
+Write-Host "      Recover when done: docker start aiops-nginx" -ForegroundColor Gray
 
 Write-Host ""
 Write-Host "=== Simulation complete ===" -ForegroundColor Green

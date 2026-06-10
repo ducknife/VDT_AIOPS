@@ -4,7 +4,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
-import com.vdt.aiops.monitoring.detection.enums.AnomalyType;
+import com.vdt.aiops.monitoring.alertmanager.Alert;
 import com.vdt.aiops.monitoring.logcollector.LogGroup;
 import com.vdt.aiops.monitoring.metricscraper.MetricsOfService;
 import com.vdt.aiops.topology.enums.ServiceRole;
@@ -21,10 +21,8 @@ import lombok.Setter;
 @NoArgsConstructor
 @Builder
 public class ContextBundle {
-    private String service; // focus
-    private AnomalyType type;
-    private String message;
-    private Instant detectedAt;
+    private String focus; 
+    private List<Alert> alerts;
     private Instant windowFrom, windowTo; // +- 5 minutes
     private ServiceRole focusRole; // role of focus service
     private Map<String, ServiceRole> downstream;

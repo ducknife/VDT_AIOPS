@@ -49,16 +49,10 @@ Write-Host ""
 Write-Host "[context] traffic-gen logs (request failure evidence):" -ForegroundColor Magenta
 docker logs aiops-traffic-gen --tail 10 2>&1
 
-# Restart
+# KHONG restart ngay: de loi "song" cho AnomalyDetector + Agent kip bat va dieu tra.
 Write-Host ""
-Write-Host "[recover] Restarting $container ..." -ForegroundColor Green
-docker start $container | Out-Null
-Start-Sleep -Seconds 3
+Write-Host "[hold] $container LEFT DOWN so AIOps can detect + analyze." -ForegroundColor Red
+Write-Host "       Recover when done: docker start $container" -ForegroundColor Gray
+Write-Host ""
 
-try {
-    Invoke-WebRequest -Uri "$BASE/health" -UseBasicParsing -TimeoutSec 5 | Out-Null
-    Write-Host "          RECOVERED -- stack is responding" -ForegroundColor Green
-} catch {
-    Write-Host "          Not yet recovered -- check docker compose ps" -ForegroundColor Yellow
-}
-Write-Host ""
+#.\simulate-container-down.ps1 -Service node-api
