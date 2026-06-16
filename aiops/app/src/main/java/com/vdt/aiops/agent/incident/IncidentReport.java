@@ -26,5 +26,5 @@ public class IncidentReport {
     private List<Hypothesis> hypotheses;
     private List<Action> recommendedActions;
     private List<Evidence> citedEvidence;
-    private List<Long> coveredAlertIds ; // alert incident (root + victim) => link alert
+    private List<Long> coveredAlertIds; // alert incident (root + victim) => link alert
 }

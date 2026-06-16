@@ -28,13 +28,16 @@ public class SaveIncidentReport {
     private final AlertRepository alertRepository;
 
     @Transactional
-    public void persist(List<IncidentReport> reports, List<Alert> groupAlerts, long investigationMs) {
+    public void persist(List<IncidentReport> reports, List<Alert> groupAlerts, long investigationMs,
+        String investigationId
+    ) {
         // map alertId -> incidentId
         Map<Long, Long> alertIdToIncId = new HashMap<>();
         List<Long> groupAlertIds = groupAlerts.stream().map(a -> a.getId()).toList();
         for (IncidentReport report : reports) {
             Incident incident = from(report);
             incident.setInvestigationMs(investigationMs);
+            incident.setInvestigationId(investigationId);
             Incident saved = incidentRepository.save(incident);
             List<Long> covered = report.getCoveredAlertIds();
             if (covered != null && !covered.isEmpty()) {

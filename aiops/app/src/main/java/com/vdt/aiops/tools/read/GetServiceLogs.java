@@ -26,13 +26,15 @@ public class GetServiceLogs {
             "Use this when investigating errors or anomalies in a service. " +
             "Parameters: service name (e.g. 'nginx', 'node-api', 'redis', 'postgres'), " +
             "fromIso and toIso in ISO-8601 format (e.g. '2024-01-01T10:00:00Z'). " +
-            "Optional logLevel: ERROR, WARN, INFO — null to get all levels.")
+            "Optional logLevel: ERROR, WARN, or INFO. To include ALL levels, " +
+            "OMIT this parameter entirely (do not pass the string \"null\").")
     public String fetchLogs(String service, String fromIso, String toIso, String logLevel) {
         try {
             Instant from = Instant.parse(fromIso);
             Instant to = Instant.parse(toIso);
             LogLevel level = null;
-            if (logLevel != null) {
+            // treat "null"/blank as "no filter" — LLMs often pass the literal string "null"
+            if (logLevel != null && !logLevel.isBlank() && !logLevel.equalsIgnoreCase("null")) {
                 try {
                     level = LogLevel.valueOf(logLevel.trim().toUpperCase());
                 } catch (IllegalArgumentException e) {

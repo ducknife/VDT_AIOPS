@@ -6,8 +6,6 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Configuration;
 
 import com.vdt.aiops.agent.context.ContextBuilder;
-import com.vdt.aiops.agent.context.ContextBundle;
-import com.vdt.aiops.agent.incident.IncidentReport;
 import com.vdt.aiops.agent.loop.Query;
 import com.vdt.aiops.config.properties.AiopsProperties;
 import com.vdt.aiops.monitoring.alertmanager.Alert;

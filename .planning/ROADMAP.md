@@ -51,9 +51,9 @@ VDT-AIOps is built as a single Spring Boot process where every layer depends str
 **Depends on**: Phase 2
 **Requirements**: AD-01, AM-01, AM-02, AM-03, AM-04
 **Success Criteria** (what must be TRUE):
-  1. Manually stopping a container triggers an `AnomalyEvent` with severity P1 and the alert appears in PostgreSQL `alerts` table within 30 seconds (AD-01, AM-02, AM-04)
+  1. Manually stopping a container triggers an `AnomalyEvent` with severity P1 and the alert appears in PostgreSQL `alerts` t containers within a 2-minute window results in a single `alert_groups` record linkable within 30 seconds (AD-01, AM-02, AM-04)
   2. Stopping the same container a second time within 5 minutes does NOT create a second alert row — the SHA-256 deduplication TTL blocks it; a new alert IS created after the 5-minute cooldown expires (AM-01)
-  3. Stopping two related containers within a 2-minute window results in a single `alert_groups` record linking both alerts, not two separate unlinked alerts (AM-03)
+  3. Stopping two relateding both alerts, not two separate unlinked alerts (AM-03)
   4. A CLI query (or direct SQL) returns all open alerts with `opened_at`, `status=ALERTING`, and null `closed_at`, confirming queryable state (AM-04)
   5. P1-P4 classification boundary is enforced: a service-down event is classified P1, a simulated 25% error rate is classified P2, a simulated 10% error rate is classified P3 (AM-02)
 **Plans**: TBD

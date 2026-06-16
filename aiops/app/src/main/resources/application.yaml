@@ -5,6 +5,10 @@ spring:
     name: aiops
   main:
     web-application-type: servlet   # headless server: Tomcat foreground giữ JVM sống + phục vụ WebSocket
+  task: 
+    scheduling: 
+      pool: 
+        size: 4 # max 4: each thread for each task
 
   threads:
     virtual:

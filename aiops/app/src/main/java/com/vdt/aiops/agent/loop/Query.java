@@ -2,6 +2,7 @@ package com.vdt.aiops.agent.loop;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.SystemMessage;
@@ -14,11 +15,14 @@ import org.springframework.ai.model.tool.ToolCallingChatOptions;
 import org.springframework.ai.model.tool.ToolCallingManager;
 import org.springframework.ai.model.tool.ToolExecutionResult;
 import org.springframework.ai.tool.ToolCallback;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vdt.aiops.agent.context.ContextBundle;
+import com.vdt.aiops.agent.event.turn.AgentTurnEvent;
+import com.vdt.aiops.agent.event.turn.ToolCallView;
 import com.vdt.aiops.agent.incident.IncidentReport;
 import com.vdt.aiops.agent.prompt.SystemPrompts;
 import com.vdt.aiops.config.properties.AiopsProperties;
@@ -39,9 +43,10 @@ public class Query {
     private final ToolCallingManager toolCallingManager; // layer 3: tool orchestration
     private final ToolCallback[] diagnosticTools; // list tool
     private final ObjectMapper objectMapper; // serializable -> JSON
+    private final ApplicationEventPublisher eventPublisher;
 
     @SneakyThrows
-    public List<IncidentReport> investigate(ContextBundle bundle) {
+    public List<IncidentReport> investigate(ContextBundle bundle, String investigationId) {
 
         /* Phase 1: Assembly Context */
 
@@ -72,6 +77,10 @@ public class Query {
         /* Phase 3 + 4: Tool Excecution + Feedback -> loop */
         int turn = 0;
         while (needsFollowUp && turn < maxTurns) {
+            // publish turn event
+            eventPublisher.publishEvent(
+                    new AgentTurnEvent(investigationId, turn + 1, toolCalls(response)));
+
             ToolExecutionResult exec = toolCallingManager.executeToolCalls(prompt, response);
             prompt = new Prompt(exec.conversationHistory(), options); // feedback
             response = chatModel.call(prompt); // phase 2
@@ -99,6 +108,7 @@ public class Query {
                 ));
     }
 
+    // Loop end, but still has tool call
     private ChatResponse forceFinalAnswer(Prompt lastPrompt) {
         List<Message> history = new ArrayList<>(lastPrompt.getInstructions());
         history.add(new UserMessage(
@@ -106,5 +116,27 @@ public class Query {
                         + "Using ONLY the evidence gathered so far, output your final answer now "
                         + "as the JSON array that matches the requested schema."));
         return chatModel.call(new Prompt(history));
+    }
+
+    private List<ToolCallView> toolCalls(ChatResponse response) {
+        return response.getResults().stream()
+                .flatMap(r -> r.getOutput().getToolCalls().stream())
+                .map(tc -> ToolCallView.builder()
+                        .name(tc.name())
+                        .type(tc.type())
+                        .arguments(parseArgs(tc.arguments()))
+                        .build())
+                .toList();
+    }
+
+    // parse arguments String include json to map
+    private Object parseArgs(String raw) {
+        if (raw == null || raw.isBlank())
+            return Map.of();
+        try {
+            return objectMapper.readValue(raw, Map.class);
+        } catch (Exception e) {
+            return raw;
+        }
     }
 }

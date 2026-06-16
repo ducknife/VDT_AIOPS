@@ -6,6 +6,7 @@ import java.util.List;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import com.vdt.aiops.agent.incident.enums.IncidentStatus;
 import com.vdt.aiops.agent.incident.enums.Severity;
 
 import jakarta.persistence.Column;
@@ -59,4 +60,12 @@ public class Incident {
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     private List<Evidence> citedEvidence;
+
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status")
+    private IncidentStatus status = IncidentStatus.NEW;
+
+    @Column(name = "investigation_id")
+    private String investigationId;
 }

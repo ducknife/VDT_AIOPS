@@ -17,4 +17,8 @@ public interface AlertRepository extends JpaRepository<Alert, Long> {
     List<Alert> findByActiveTrueAndStatus(AlertStatus status);
 
     List<Alert> findAllByIdIn(Collection<Long> ids);
+
+    List<Alert> findByIncidentIdIn(Collection<Long> incidentIds);
+
+    List<Alert> findByIncidentId(Long incidentId);
 }
