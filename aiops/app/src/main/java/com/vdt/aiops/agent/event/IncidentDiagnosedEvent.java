@@ -2,7 +2,7 @@ package com.vdt.aiops.agent.event;
 
 import java.util.List;
 
-import com.vdt.aiops.agent.incident.IncidentReport;
+import com.vdt.aiops.agent.incident.Incident;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -19,5 +19,5 @@ import lombok.Setter;
 public class IncidentDiagnosedEvent {
     private String investigationId;
     private String rootService;
-    private List<IncidentReport> reports;
+    private List<Incident> incidents;
 }

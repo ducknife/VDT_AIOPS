@@ -14,6 +14,7 @@ import com.vdt.aiops.agent.event.IncidentDiagnosedEvent;
 import com.vdt.aiops.agent.event.InvestigationFailedEvent;
 import com.vdt.aiops.agent.event.start.AlertView;
 import com.vdt.aiops.agent.event.start.InvestigationStartedEvent;
+import com.vdt.aiops.agent.incident.Incident;
 import com.vdt.aiops.agent.incident.IncidentReport;
 import com.vdt.aiops.agent.loop.Query;
 import com.vdt.aiops.config.properties.AiopsProperties;
@@ -57,10 +58,10 @@ public class AgentDispatcher {
             try {
                 List<IncidentReport> reports = agentLoop.investigate(bundle, investigationId);
                 long ms = System.currentTimeMillis() - t0;
-                saveIncidentReport.persist(reports, group.getAlerts(), ms, investigationId);
+                List<Incident> saved = saveIncidentReport.persist(reports, group.getAlerts(), ms, investigationId);
                 // after persist, publish event
                 eventPublisher.publishEvent(
-                        new IncidentDiagnosedEvent(investigationId, root, reports));
+                        new IncidentDiagnosedEvent(investigationId, root, saved));
                 log.info("Group[root={}] -> {} incident(s) in {}ms", root, reports.size(), ms);
             } finally {
                 // always release (even on error) — a leaked permit eventually deadlocks all

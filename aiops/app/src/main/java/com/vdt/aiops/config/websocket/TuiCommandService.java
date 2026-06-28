@@ -35,7 +35,7 @@ public class TuiCommandService {
         eventPublisher.publishEvent(
                 new StatusChangedEvent(incidentId, incident.getStatus()));
     }
-
+    
     public void resolve(Long incidentId) {
         Incident incident = incidentRepository.findById(incidentId)
                 .orElseThrow(() -> new RuntimeException("Incident Not Found!"));

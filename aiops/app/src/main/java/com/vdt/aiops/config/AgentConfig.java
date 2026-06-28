@@ -8,11 +8,14 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import com.vdt.aiops.tools.read.GetActiveAlerts;
+import com.vdt.aiops.tools.read.GetIncident;
 import com.vdt.aiops.tools.read.GetIncidentHistory;
 import com.vdt.aiops.tools.read.GetServiceDependencies;
 import com.vdt.aiops.tools.read.GetServiceLogs;
+import com.vdt.aiops.tools.read.GetRecentIncidents;
 import com.vdt.aiops.tools.read.GetServiceMetrics;
 import com.vdt.aiops.tools.read.InspectContainer;
+import com.vdt.aiops.tools.read.ListActiveIncidents;
 import com.vdt.aiops.tools.read.QueryMetrics;
 
 import lombok.RequiredArgsConstructor;
@@ -36,9 +39,13 @@ public class AgentConfig {
             QueryMetrics queryMetrics,
             GetActiveAlerts getActiveAlerts,
             GetIncidentHistory getIncidentHistory,
-            InspectContainer inspectContainer) {
+            InspectContainer inspectContainer,
+            ListActiveIncidents listActiveIncidents,
+            GetIncident getIncident,
+            GetRecentIncidents getRecentIncidents) {
         return ToolCallbacks.from(
                 getServiceLogs, getServiceMetrics, getServiceDependencies,
-                queryMetrics, getActiveAlerts, getIncidentHistory, inspectContainer);
+                queryMetrics, getActiveAlerts, getIncidentHistory, inspectContainer,
+                listActiveIncidents, getIncident, getRecentIncidents);
     }
 }

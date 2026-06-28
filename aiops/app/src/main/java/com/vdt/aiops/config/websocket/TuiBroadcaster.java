@@ -30,7 +30,7 @@ public class TuiBroadcaster {
 
     @EventListener
     public void onIncidentDiagnosed(IncidentDiagnosedEvent e) {
-        send("incident", e.getInvestigationId(), e.getReports());
+        send("incident", e.getInvestigationId(), e.getIncidents());
     }
 
     @EventListener

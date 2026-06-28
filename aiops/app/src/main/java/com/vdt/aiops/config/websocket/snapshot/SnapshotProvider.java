@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vdt.aiops.agent.incident.Incident;
 import com.vdt.aiops.agent.incident.IncidentRepository;
+import com.vdt.aiops.agent.incident.enums.IncidentStatus;
 import com.vdt.aiops.monitoring.alertmanager.Alert;
 import com.vdt.aiops.monitoring.alertmanager.AlertRepository;
 
@@ -30,7 +31,7 @@ public class SnapshotProvider {
         @SneakyThrows
         @Transactional(readOnly = true)
         public String snapshotJson() {
-                List<Incident> recent = incidentRepository.findTop10ByOrderByAnalyzedAtDesc();
+                List<Incident> recent = incidentRepository.findTop5ByStatusNotOrderByAnalyzedAtDesc(IncidentStatus.RESOLVED);
                 List<Long> allIncidentIds = recent.stream().map(Incident::getId).toList();
                 // avoid N + 1 Query when each card, get alert of its.
                 Map<Long, List<Alert>> alertsByIncidentId = allIncidentIds.isEmpty()

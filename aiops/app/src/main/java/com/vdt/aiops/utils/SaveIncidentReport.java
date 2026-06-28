@@ -1,5 +1,6 @@
 package com.vdt.aiops.utils;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,17 +29,19 @@ public class SaveIncidentReport {
     private final AlertRepository alertRepository;
 
     @Transactional
-    public void persist(List<IncidentReport> reports, List<Alert> groupAlerts, long investigationMs,
+    public List<Incident> persist(List<IncidentReport> reports, List<Alert> groupAlerts, long investigationMs,
         String investigationId
     ) {
         // map alertId -> incidentId
         Map<Long, Long> alertIdToIncId = new HashMap<>();
         List<Long> groupAlertIds = groupAlerts.stream().map(a -> a.getId()).toList();
+        List<Incident> incidents = new ArrayList<>();
         for (IncidentReport report : reports) {
             Incident incident = from(report);
             incident.setInvestigationMs(investigationMs);
             incident.setInvestigationId(investigationId);
             Incident saved = incidentRepository.save(incident);
+            incidents.add(saved);
             List<Long> covered = report.getCoveredAlertIds();
             if (covered != null && !covered.isEmpty()) {
                 for (Long alertId : covered) {
@@ -54,6 +57,8 @@ public class SaveIncidentReport {
             a.setIncidentId(alertIdToIncId.get(a.getId()));
         }
         alertRepository.saveAll(groupAlerts);
+
+        return incidents;
     }
 
     @Transactional

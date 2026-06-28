@@ -20,7 +20,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AutoCompact {
 
-    private static final int COMPACT_THRESHOLD = 8000;
+    private static final int COMPACT_THRESHOLD = 200000;
     private static final int RECENT_KEEP = 6; // keep 6 latest message, else -> compact
     private final ConversationStore store;
     private final ChatModel chatModel;
