@@ -5,7 +5,7 @@
 // Group biến mất khi MỌI incident của nó resolved. Snapshot incident resolved -> tự rớt.
 
 import { useReducer, useCallback, useRef } from 'react';
-import type { Frame, IncidentView, ToolCall, AlertView, SnapshotCard } from '../types';
+import type { Frame, IncidentView, ToolCall, AlertView, SnapshotCard } from '../utils/types';
 
 export interface Turn { tools: ToolCall[]; at: number } // at = thời điểm nhận (ms)
 

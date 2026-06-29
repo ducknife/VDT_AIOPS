@@ -32,7 +32,7 @@ public class AgentConfig {
 
     /* Tool source */
     @Bean
-    public ToolCallback[] nosticChatClient(
+    public ToolCallback[] diagnosticChatClient(
             GetServiceLogs getServiceLogs,
             GetServiceMetrics getServiceMetrics,
             GetServiceDependencies getServiceDependencies,

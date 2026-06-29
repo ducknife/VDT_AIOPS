@@ -4,8 +4,8 @@
 //  - Ctrl+Z: undo (hoàn tác thay đổi gần nhất). Paste: Ctrl+Shift+V / chuột phải của terminal.
 import { useRef, useState } from 'react';
 import { Box, Text, useInput } from 'ink';
-import { C } from '../theme';
-import { clipboardCopy } from '../format';
+import { C } from '../utils/theme';
+import { clipboardCopy } from '../utils/format';
 import { useTerminalSize } from '../hooks/useTerminalSize';
 
 // lọc bỏ chuỗi escape lọt vào input:

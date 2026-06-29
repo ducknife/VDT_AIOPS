@@ -5,7 +5,7 @@
 // -> ~4 node thay vì ~200 -> layout Yoga nhẹ, chạy đủ 30fps -> KHÔNG giật.
 import { useEffect, useState, type ReactNode } from 'react';
 import { Box, Text } from 'ink';
-import { C } from '../theme';
+import { C } from '../utils/theme';
 
 // --- gradient nội suy RGB: đuôi sao chổi chuyển màu LIÊN TỤC (hết bậc thang) ---
 type RGB = [number, number, number];

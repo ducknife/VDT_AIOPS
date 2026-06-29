@@ -5,8 +5,8 @@
 // Chỉ dùng cho text ĐÃ XONG (không stream) để tránh ** hở giữa chừng.
 import { Box, Text } from 'ink';
 import type { ReactNode } from 'react';
-import { C } from '../theme';
-import { stripEmoji, wrapText } from '../format';
+import { C } from '../utils/theme';
+import { stripEmoji, wrapText } from '../utils/format';
 
 // theo đúng Panda markdown: `code` -> TEAL (markup.inline.raw), **đậm** -> CAM (markup.bold, dễ đọc)
 function inline(text: string, key: string): ReactNode[] {

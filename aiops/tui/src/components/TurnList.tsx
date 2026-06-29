@@ -3,8 +3,8 @@
 //  - TurnDetail: danh sách tool + tham số (không bắt click).
 import { Box, Text } from 'ink';
 import type { Turn } from '../store/useFeed';
-import { C } from '../theme';
-import { clock, argEntries } from '../format';
+import { C } from '../utils/theme';
+import { clock, argEntries } from '../utils/format';
 
 const countTools = (turns: Turn[]) => turns.reduce((a, t) => a + t.tools.length, 0);
 

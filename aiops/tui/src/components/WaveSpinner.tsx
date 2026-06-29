@@ -1,7 +1,7 @@
 // Loading: 4 ô pixel CAO DẦN (▂▄▆█) hiện dần TRÁI→PHẢI rồi lặp lại — kiểu "đẩy pixel ra".
 import { useEffect, useState } from 'react';
 import { Text } from 'ink';
-import { C } from '../theme';
+import { C } from '../utils/theme';
 
 const BARS = ['▂', '▄', '▆', '█']; // 4 ô cao dần
 

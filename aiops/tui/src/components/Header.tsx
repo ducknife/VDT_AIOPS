@@ -2,9 +2,9 @@
 // Platform" NẰM TRÊN đường ở góc trên-trái (kiểu Claude Code).
 //  TRÁI : logo.   PHẢI : DUCKOMPOSE (tiêu đề) + mô tả.
 import { Box, Text } from 'ink';
-import { Logo } from '../logo';
-import { Brand } from '../brand';
-import { C } from '../theme';
+import { Logo } from '../assets/logo';
+import { Brand } from '../utils/brand';
+import { C } from '../utils/theme';
 import { useTerminalSize } from '../hooks/useTerminalSize';
 import { AnimatedBorder } from './AnimatedBorder';
 

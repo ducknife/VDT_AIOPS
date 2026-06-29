@@ -4,7 +4,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import WebSocket from 'ws';
-import type { Command, Frame } from '../types';
+import type { Command, Frame } from '../utils/types';
 
 export type WsStatus = 'connecting' | 'connected' | 'closed' | 'error';
 

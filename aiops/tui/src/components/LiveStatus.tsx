@@ -3,7 +3,7 @@
 // backend đang kẹt trong 1 lần gọi LLM blocking (không stream gì ra).
 import { useEffect, useRef, useState } from 'react';
 import { Box, Text } from 'ink';
-import { C } from '../theme';
+import { C } from '../utils/theme';
 import { WaveSpinner } from './WaveSpinner';
 
 export function LiveStatus({

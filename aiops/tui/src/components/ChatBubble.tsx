@@ -4,8 +4,8 @@
 //  - ChatBody: text trả lời (markdown / stream raw) hoặc trạng thái "Thinking…".
 import { Box, Text } from 'ink';
 import type { ChatItem } from '../store/useFeed';
-import { C } from '../theme';
-import { stripEmoji, wrapText } from '../format';
+import { C } from '../utils/theme';
+import { stripEmoji, wrapText } from '../utils/format';
 import { LiveStatus } from './LiveStatus';
 import { WaveSpinner } from './WaveSpinner';
 import { Markdown } from './Markdown';

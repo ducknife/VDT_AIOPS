@@ -5,9 +5,9 @@
 //    để Viewport render tiêu đề thành block CLICK-ĐỂ-COPY (copy riêng từng mục).
 //  - IncidentAction: nút a/r/e mỗi cái 1 dòng click.
 import { Box, Text } from 'ink';
-import type { IncidentView } from '../types';
-import { C, severityColor, statusColor } from '../theme';
-import { stripEmoji } from '../format';
+import type { IncidentView } from '../utils/types';
+import { C, severityColor, statusColor } from '../utils/theme';
+import { stripEmoji } from '../utils/format';
 import type { ReactNode } from 'react';
 
 // DÒNG icon + meta (block click được)

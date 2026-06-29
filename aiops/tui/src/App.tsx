@@ -10,8 +10,8 @@ import { InputBar } from './components/InputBar';
 import { StatusBar } from './components/StatusBar';
 import { useTerminalSize } from './hooks/useTerminalSize';
 import { useMouse } from './hooks/useMouse';
-import { C } from './theme';
-import { clipboardCopy } from './format';
+import { C } from './utils/theme';
+import { clipboardCopy } from './utils/format';
 import { incidentFullText } from './components/IncidentRow';
 
 const WS_URL = 'ws://localhost:8088/ws/incidents';

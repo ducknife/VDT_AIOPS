@@ -1,6 +1,6 @@
 // Thanh cuộn dọc bên phải: thumb (█) phản ánh vị trí + tỉ lệ khung/nội dung.
 import { Box, Text } from 'ink';
-import { C } from '../theme';
+import { C } from '../utils/theme';
 
 export function Scrollbar({
   height, contentH, scroll, maxScroll,

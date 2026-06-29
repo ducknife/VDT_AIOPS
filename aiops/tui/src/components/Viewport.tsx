@@ -9,7 +9,7 @@ import { ChatUser, ChatHead, ChatBody } from './ChatBubble';
 import { TurnToggle, TurnDetail } from './TurnList';
 import { IncidentMeta, IncidentBody, IncidentAction, incidentSections, SectionHeader, incidentFullText } from './IncidentRow';
 import { Scrollbar } from './Scrollbar';
-import { C } from '../theme';
+import { C } from '../utils/theme';
 import { useTerminalSize } from '../hooks/useTerminalSize';
 
 export type Hit =

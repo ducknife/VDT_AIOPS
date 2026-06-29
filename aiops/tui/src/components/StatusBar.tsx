@@ -1,7 +1,7 @@
 // Dòng trạng thái đáy: WS + mode hiện tại + gợi ý phím. Tab đổi giữa input ↔ list.
 import { Box, Text } from 'ink';
 import type { WsStatus } from '../ws/useSocket';
-import { C } from '../theme';
+import { C } from '../utils/theme';
 
 const wsColor = (s: WsStatus) =>
   s === 'connected' ? C.success : s === 'connecting' ? C.warning : C.red;

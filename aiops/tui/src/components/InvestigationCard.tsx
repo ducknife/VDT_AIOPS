@@ -2,7 +2,7 @@
 // Turns và incidents được Viewport render RIÊNG (thành block click-chính-xác).
 import { Box, Text } from 'ink';
 import type { Investigation } from '../store/useFeed';
-import { C, serviceColor } from '../theme';
+import { C, serviceColor } from '../utils/theme';
 import { LiveStatus } from './LiveStatus';
 
 const borderByStatus = (s: Investigation['status']) =>
