@@ -1,69 +1,55 @@
 # simulate-db-exhaustion.ps1
-# SIM-03: PostgreSQL CAN KIET connection slot (server-side).
-# Postgres max_connections = 100. Mo ~85 ket noi dai (pg_sleep) -> chiem >80% slot
-# -> connUtilPercent > 80 -> DB_EXHAUSTION. Connection moi (ke ca node-api pool)
-# bat dau bi tu choi -> 500 that.
-#
+# SIM: PostgreSQL can kiet connection slot.
+# max_connections=100. Mo ~85 connection dai (pg_sleep) -> chiem >80% slot
+# -> connUtilPercent > 80 -> DB_EXHAUSTION. Connection moi (ke ca node-api pool max=10) bi tu choi.
+# Connection giu VINH VIEN (docker exec -d + pg_sleep dai) -> song qua ca khi script thoat.
 # Recover: .\recover.ps1 db-exhaustion   (kill cac pg_sleep)
-
 param(
-    [int]$BlockerConnections = 85,   # +baseline ~2 -> ~88/100 slot -> vuot 80%, van con headroom cho exporter
-    [int]$BlockDurationSecs  = 25
+    [int]$BlockerConnections = 85   # >80/100 slot de vuot nguong, nhung chua dung 100 (chua het exporter)
 )
 
+$Base = "http://localhost:8080"
+
 Write-Host ""
-Write-Host "=== [SIM-03] DB Connection Exhaustion ===" -ForegroundColor Yellow
-Write-Host "    Opening $BlockerConnections connections for $BlockDurationSecs s (node-api pool max=10)"
+Write-Host "=== [SIM] DB Connection Exhaustion ===" -ForegroundColor Yellow
+Write-Host "    Mo $BlockerConnections connection (node-api pool max=10)"
 Write-Host ""
 
-# Baseline: dem connections hien tai
-Write-Host "[before] Active connections to postgres:" -ForegroundColor Cyan
+Write-Host "[before] So connection hien tai toi postgres:" -ForegroundColor Cyan
 docker exec aiops-postgres psql -U appuser -d appdb -c `
     "SELECT count(*) AS active_conn FROM pg_stat_activity WHERE datname='appdb';" 2>&1
 
-# Mo blocker connections song song
 Write-Host ""
-Write-Host "[exhaust] Opening $BlockerConnections long-running connections (pg_sleep)..." -ForegroundColor Red
-
-# Blocker DETACHED (docker exec -d) + pg_sleep dài -> giữ connection VĨNH VIỄN,
-# sống qua cả khi script thoát. Chỉ nhả khi .\recover.ps1 db-exhaustion
+Write-Host "[exhaust] mo $BlockerConnections connection dai (pg_sleep, detached)..." -ForegroundColor Red
 1..$BlockerConnections | ForEach-Object {
     docker exec -d aiops-postgres psql -U appuser -d appdb -c "SELECT pg_sleep(86400);" | Out-Null
 }
-
 Start-Sleep -Seconds 2
 
-# Kiem tra connections dang giu
 Write-Host ""
-Write-Host "[during] Active connections while exhausted:" -ForegroundColor Cyan
+Write-Host "[during] So connection khi dang can kiet:" -ForegroundColor Cyan
 docker exec aiops-postgres psql -U appuser -d appdb -c `
     "SELECT count(*) AS active_conn FROM pg_stat_activity WHERE datname='appdb';" 2>&1
 
-# Thu goi API (se fail vi pool can)
 Write-Host ""
-Write-Host "[probe] Calling /api/users while pool is exhausted..." -ForegroundColor Yellow
+Write-Host "[probe] goi /api/users khi pool can:" -ForegroundColor Yellow
 1..5 | ForEach-Object {
     try {
-        $r = Invoke-WebRequest -Uri "http://localhost:8080/api/users" -UseBasicParsing -TimeoutSec 5
-        Write-Host "  Probe $_ : $($r.StatusCode) OK (pool not full yet)"
-    } catch {
-        Write-Host "  Probe $_ : FAILED -- $($_.Exception.Message)" -ForegroundColor Red
+        $r = Invoke-WebRequest -Uri "$Base/api/users" -UseBasicParsing -TimeoutSec 5
+        Write-Host "  probe $_ : $($r.StatusCode) OK (pool chua day)"
+    }
+    catch {
+        Write-Host "  probe $_ : FAILED -- $($_.Exception.Message)" -ForegroundColor Red
     }
     Start-Sleep -Milliseconds 500
 }
 
-# Log de AIOps phan tich
 Write-Host ""
-Write-Host "[context] node-api logs (look for connection timeout):" -ForegroundColor Magenta
+Write-Host "[context] node-api logs (tim connection timeout):" -ForegroundColor Magenta
 Start-Sleep -Seconds 3
 docker logs aiops-node-api --tail 20 2>&1
 
 Write-Host ""
-Write-Host "[context] postgres logs:" -ForegroundColor Magenta
-docker logs aiops-postgres --tail 15 2>&1
-
-# KHONG nha ngay: giu connection VINH VIEN cho AIOps detect + analyze
-Write-Host ""
-Write-Host "[hold] $BlockerConnections connections HELD (vĩnh viễn) so AIOps can detect + analyze." -ForegroundColor Red
-Write-Host "       Recover khi xong: .\recover.ps1 db-exhaustion   (hoặc .\recover.ps1 all)" -ForegroundColor Gray
+Write-Host "[hold] $BlockerConnections connection DUOC GIU cho AIOps detect + analyze." -ForegroundColor Red
+Write-Host "       Recover: .\recover.ps1 db-exhaustion" -ForegroundColor Gray
 Write-Host ""

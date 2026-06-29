@@ -23,8 +23,8 @@ export function ChatUser({ item, width = 40 }: { item: ChatItem; width?: number 
     <Box flexDirection="column" marginTop={1} marginBottom={1} width="100%">
       {lines.map((l, i) => (
         <Text key={i} backgroundColor={C.steel} wrap="truncate-end">
-          <Text color={C.sky} bold>▌ </Text>
-          <Text color={C.white} bold>{`${l} `.padEnd(w - 2)}</Text>
+          <Text color={C.orange} bold>▌ </Text>
+          <Text color={C.white}>{`${l} `.padEnd(w - 2)}</Text>
         </Text>
       ))}
     </Box>
@@ -42,7 +42,7 @@ export function ChatHead({ item }: { item: ChatItem }) {
 
 export function ChatBody({ item, width = 80 }: { item: ChatItem; width?: number }) {
   if (item.text) {
-    return item.streaming ? <Text>{stripEmoji(item.text)}</Text> : <Markdown text={item.text} width={width} />;
+    return item.streaming ? <Text color={C.contrastGray}>{stripEmoji(item.text)}</Text> : <Markdown text={item.text} width={width} />;
   }
   if (item.streaming) {
     return <LiveStatus color={C.sky} label={chatLabel(item)} showSpinner={false} />;

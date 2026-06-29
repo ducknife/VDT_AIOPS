@@ -80,8 +80,8 @@ export function InputBar({
       flexShrink={0}
     >
       {/* ô nhập: nền seal trải full chiều rộng (đệm khoảng trắng cùng nền) */}
-      <Text backgroundColor={C.seal} wrap="truncate-start">
-        <Text color={C.sky}>{' › '}</Text>
+      <Text wrap="truncate-start">
+        <Text color={C.orange}>{' › '}</Text>
         {/* đang chọn tất cả -> tô nền sky cho cả chuỗi (bôi đen) */}
         {allSel
           ? <Text color={C.bgDark} backgroundColor={C.sky}>{value}</Text>

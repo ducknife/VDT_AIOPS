@@ -3,9 +3,6 @@ spring:
     import: optional:file:.env[.properties]   # nạp aiops/app/.env -> ANTHROPIC_API_KEY thành property
   application:
     name: aiops
-  main:
-    web-application-type: servlet   # headless server: Tomcat foreground giữ JVM sống + phục vụ WebSocket
-  task: 
     scheduling: 
       pool: 
         size: 4 # max 4: each thread for each task
@@ -47,7 +44,7 @@ server:
 
 # ── Docker ────────────────────────────────────────────────────────────────
 docker:
-  host: ${DOCKER_HOST:tcp://localhost:2375}
+  host: ${DOCKER_HOST:tcp://localhost:2375}   # default = chạy LOCAL; container đè DOCKER_HOST=tcp://docker-proxy:2375
 
 # ── AIOps tuning ──────────────────────────────────────────────────────────
 aiops:

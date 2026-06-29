@@ -17,7 +17,7 @@ import { incidentFullText } from './components/IncidentRow';
 const WS_URL = 'ws://localhost:8088/ws/incidents';
 
 export default function App() {
-  const conversationId = useRef(`tui-${Date.now()}`).current;
+  const conversationId = useRef(`tui-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`).current;
   const { exit } = useApp();
   const { state, onFrame, pushUser } = useFeed();
   const { status, send } = useSocket(WS_URL, onFrame);

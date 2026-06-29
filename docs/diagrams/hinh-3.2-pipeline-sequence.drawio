@@ -1,0 +1,157 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Hình 3.2 - Pipeline (sequence)" id="pipeline-seq">
+    <mxGraphModel dx="1030" dy="562" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1320" pageHeight="860" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;align=center;fontSize=15;fontStyle=1;" value="Hình 3.2. Luồng điều tra tự động — sơ đồ tuần tự" vertex="1">
+          <mxGeometry height="30" width="480" x="420" y="10" as="geometry" />
+        </mxCell>
+        <mxCell id="hDet" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" value="Anomaly Detector" vertex="1">
+          <mxGeometry height="40" width="150" x="15" y="55" as="geometry" />
+        </mxCell>
+        <mxCell id="hAM" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" value="Alert Manager" vertex="1">
+          <mxGeometry height="40" width="150" x="185" y="55" as="geometry" />
+        </mxCell>
+        <mxCell id="hCor" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontStyle=1;" value="Correlator (Tick)" vertex="1">
+          <mxGeometry height="40" width="150" x="355" y="55" as="geometry" />
+        </mxCell>
+        <mxCell id="hDisp" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontStyle=1;" value="AgentDispatcher" vertex="1">
+          <mxGeometry height="40" width="150" x="545" y="55" as="geometry" />
+        </mxCell>
+        <mxCell id="hAgent" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;" value="Agent + LLM" vertex="1">
+          <mxGeometry height="40" width="150" x="735" y="55" as="geometry" />
+        </mxCell>
+        <mxCell id="hDB" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" value="PostgreSQL" vertex="1">
+          <mxGeometry height="40" width="150" x="915" y="55" as="geometry" />
+        </mxCell>
+        <mxCell id="hTUI" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;" value="TUI (mọi TUI)" vertex="1">
+          <mxGeometry height="40" width="150" x="1085" y="55" as="geometry" />
+        </mxCell>
+        <mxCell id="llDet" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#999999;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="90" y="95" as="sourcePoint" />
+            <mxPoint x="90" y="800" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="llAM" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#999999;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="260" y="95" as="sourcePoint" />
+            <mxPoint x="260" y="800" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="llCor" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#999999;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="430" y="95" as="sourcePoint" />
+            <mxPoint x="430" y="800" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="llDisp" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#999999;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="620" y="95" as="sourcePoint" />
+            <mxPoint x="620" y="800" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="llAgent" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#999999;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="810" y="95" as="sourcePoint" />
+            <mxPoint x="810" y="800" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="llDB" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#999999;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="990" y="95" as="sourcePoint" />
+            <mxPoint x="990" y="800" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="llTUI" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#999999;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1160" y="95" as="sourcePoint" />
+            <mxPoint x="1160" y="800" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="nDet" parent="1" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#f5f5f5;strokeColor=#999999;fontSize=10;" value="@Scheduled 5s: scrape metrics + check rules" vertex="1">
+          <mxGeometry height="34" width="170" x="10" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="m2" edge="1" parent="1" style="html=1;endArrow=classic;fontSize=11;" value="anomaly → handle()">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="90" y="165" as="sourcePoint" />
+            <mxPoint x="260" y="165" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m3" edge="1" parent="1" style="html=1;endArrow=classic;fontSize=11;" value="save Alert (ACTIVE)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="260" y="205" as="sourcePoint" />
+            <mxPoint x="990" y="205" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="nCor" parent="1" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#f5f5f5;strokeColor=#999999;fontSize=10;" value="@Scheduled 5s" vertex="1">
+          <mxGeometry height="24" width="140" x="360" y="238" as="geometry" />
+        </mxCell>
+        <mxCell id="m5" edge="1" parent="1" style="html=1;endArrow=classic;fontSize=11;" value="load active alerts">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="430" y="290" as="sourcePoint" />
+            <mxPoint x="990" y="290" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m6" edge="1" parent="1" style="html=1;endArrow=open;dashed=1;fontSize=11;" value="return List&amp;lt;Alert&amp;gt;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="990" y="325" as="sourcePoint" />
+            <mxPoint x="430" y="325" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="nCor2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" value="correlate (Union-Find) + debounce: quiet 30s / max 120s" vertex="1">
+          <mxGeometry height="40" width="190" x="340" y="348" as="geometry" />
+        </mxCell>
+        <mxCell id="m8" edge="1" parent="1" style="html=1;endArrow=classic;fontSize=11;" value="investigate(group) — @Async">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="430" y="408" as="sourcePoint" />
+            <mxPoint x="620" y="408" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e9" edge="1" parent="1" style="html=1;endArrow=classic;dashed=1;fontSize=11;strokeColor=#9673a6;" value="WS: InvestigationStarted (broadcast)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="620" y="448" as="sourcePoint" />
+            <mxPoint x="1160" y="448" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="nDisp" parent="1" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#f5f5f5;strokeColor=#999999;fontSize=10;" value="ContextBuilder.build() → ContextBundle" vertex="1">
+          <mxGeometry height="34" width="180" x="530" y="478" as="geometry" />
+        </mxCell>
+        <mxCell id="m11" edge="1" parent="1" style="html=1;endArrow=classic;fontSize=11;" value="investigate(bundle)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="620" y="528" as="sourcePoint" />
+            <mxPoint x="810" y="528" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="nAgent" parent="1" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" value="loop ≤ 8 turns: call LLM ↔ execute read-only tools" vertex="1">
+          <mxGeometry height="40" width="190" x="718" y="555" as="geometry" />
+        </mxCell>
+        <mxCell id="e13" edge="1" parent="1" style="html=1;endArrow=classic;dashed=1;fontSize=11;strokeColor=#9673a6;" value="WS: AgentTurn (per turn, broadcast)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="810" y="615" as="sourcePoint" />
+            <mxPoint x="1160" y="615" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m14" edge="1" parent="1" style="html=1;endArrow=open;dashed=1;fontSize=11;" value="return List&amp;lt;IncidentReport&amp;gt;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="810" y="655" as="sourcePoint" />
+            <mxPoint x="620" y="655" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m15" edge="1" parent="1" style="html=1;endArrow=classic;fontSize=11;" value="persist Incident + link alerts">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="620" y="695" as="sourcePoint" />
+            <mxPoint x="990" y="695" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e16" edge="1" parent="1" style="html=1;endArrow=classic;dashed=1;fontSize=11;strokeColor=#9673a6;" value="WS: IncidentDiagnosed (broadcast)">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="620" y="735" as="sourcePoint" />
+            <mxPoint x="1160" y="735" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -1,6 +1,7 @@
 package com.vdt.aiops.config.websocket;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -30,6 +31,9 @@ public class IncidentSocketHandler extends TextWebSocketHandler {
 
     // To check which is connecting
     private final Set<WebSocketSession> sessions = ConcurrentHashMap.newKeySet();
+
+    // conversationId -> session: chat only response to that TUI, not broadcast all TUI
+    private final Map<String, WebSocketSession> convSessions = new ConcurrentHashMap<>();
 
     // After TUI connect, register it + send the initial snapshot.
     @Override
@@ -61,6 +65,7 @@ public class IncidentSocketHandler extends TextWebSocketHandler {
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
         sessions.remove(session);
+        convSessions.values().removeIf(s -> s == session); // remove conversation if TUI closed
     }
 
     // handle text message from TUI (example: change status of incident, ...)
@@ -74,12 +79,29 @@ public class IncidentSocketHandler extends TextWebSocketHandler {
             } else if ("resolve".equals(cmdRaw)) {
                 tuiCommandService.resolve(cmd.getIncidentId());
             } else if ("ask".equals(cmdRaw)) {
+                // remember which TUI ask
+                if (cmd.getConversationId() != null) convSessions.put(cmd.getConversationId(), session);
                 chatService.ask(cmd.getConversationId(), cmd.getText(), cmd.getIncidentId());
             } else {
                 // log.warn("Unknown command: {}", cmd.command());
             }
         } catch (Exception e) {
             // log.warn("Bad command from {}: {}", session.getId(), e.getMessage());
+        }
+    }
+
+    // send to TUI has this conversationId 
+    public void sendTo(String conversationId, String json) {
+        WebSocketSession session = convSessions.get(conversationId);
+        if (session == null) return; // TUI closed/didn't ask => return
+        try {
+            if (session.isOpen()) {
+                synchronized (session) {
+                    session.sendMessage(new TextMessage(json));
+                }
+            }
+        } catch (IOException e) {
+            // log.warn("sendTo fail {}: {}", conversationId, e.getMessage());
         }
     }
 

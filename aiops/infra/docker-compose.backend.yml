@@ -36,6 +36,22 @@ services:
     networks:
       - aiops-sim-net
 
+  # ── Docker socket proxy — bắc cầu /var/run/docker.sock -> TCP 2375 nội bộ ──
+  # Engine nối tcp://docker-proxy:2375 (docker-java chạy TCP ổn định); giám khảo KHÔNG cần
+  # bật "expose daemon on 2375" trên Docker Desktop. TCP chỉ mở trong mạng nội bộ.
+  docker-proxy:
+    image: alpine/socat
+    container_name: aiops-docker-proxy
+    command: TCP-LISTEN:2375,fork,reuseaddr UNIX-CONNECT:/var/run/docker.sock
+    user: "0:0"   # root để đọc socket
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "127.0.0.1:2375:2375"   # mở ra host (chỉ localhost) -> chạy engine bằng mvn local nối tcp://localhost:2375 mà KHỎI bật toggle 2375
+    networks:
+      - aiops-sim-net
+    restart: unless-stopped
+
   # ── AIOps Engine — bộ não always-on (Java Spring Boot) ───────────────────
   aiops-engine:
     build:
@@ -43,8 +59,8 @@ services:
       dockerfile: Dockerfile
     container_name: aiops-engine
     environment:
-      # ── Docker API: qua TCP host.docker.internal (daemon nằm trong VM Docker Desktop) ──
-      DOCKER_HOST: tcp://host.docker.internal:2375
+      # ── Docker API: qua socat proxy (TCP nội bộ) — KHỎI bật 2375 trên Docker Desktop ──
+      DOCKER_HOST: tcp://docker-proxy:2375
       # ── State DB: tên SERVICE nội bộ + port NỘI BỘ (không phải localhost:5433) ──
       AIOPS_DB_HOST: postgres-aiops
       AIOPS_DB_PORT: "5432"
@@ -56,16 +72,16 @@ services:
       # ── Claude: application.yaml KHÔNG có default → bắt buộc phải có ──
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}   # secret ← .env
       SERVER_PORT: "8088"
-    ports: 
+    ports:
       - "127.0.0.1:8088:8088"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     networks:
       - aiops-sim-net
     depends_on:
+      docker-proxy:
+        condition: service_started
       postgres-aiops:
-        condition: service_healthy 
-      prometheus: 
+        condition: service_healthy
+      prometheus:
         condition: service_started
     restart: unless-stopped # self wakeup
 

@@ -39,10 +39,10 @@ function BridgeBar({ w }: { w: number }) {
   const side = Math.max(2, Math.floor((barW - label.length) / 2));
   return (
     <Box width={w} marginTop={1} marginBottom={1} justifyContent="center" flexShrink={0}>
-      <Text>
-        <Text color={C.blue}>{'─'.repeat(side)}</Text>
-        <Text color={C.sky} bold>{label}</Text>
-        <Text color={C.blue}>{'─'.repeat(side)}</Text>
+      <Text color={C.gray}>
+        <Text>{'─'.repeat(side)}</Text>
+        <Text>{label}</Text>
+        <Text>{'─'.repeat(side)}</Text>
       </Text>
     </Box>
   );
@@ -101,8 +101,9 @@ export const Viewport = forwardRef<ViewportHandle, Props>(function Viewport(
     push({ type: 'spacer' },
       <Box width={w}><Text backgroundColor={C.seal} color={C.contrastGray} bold wrap="truncate-end">{'  snapshot · active incidents'.padEnd(w)}</Text></Box>);
     state.snapshot.forEach((inc, i) => pushIncident(inc, `snap-${inc.id ?? i}`));
-    push({ type: 'spacer' }, <BridgeBar w={w} />);
   }
+
+  push({ type: 'spacer' }, <BridgeBar w={w} />); // LUÔN hiện (kể cả khi chưa có snapshot)
 
   state.live.forEach((it) => {
     if (it.kind === 'investigation') {

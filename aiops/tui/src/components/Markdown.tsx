@@ -18,7 +18,7 @@ function inline(text: string, key: string): ReactNode[] {
       part.split('**').forEach((seg, si) =>
         out.push(si % 2 === 1
           ? <Text key={`${key}-b${pi}-${si}`} bold color={C.gold}>{seg}</Text>
-          : <Text key={`${key}-${pi}-${si}`}>{seg}</Text>),
+          : <Text key={`${key}-${pi}-${si}`} color={C.contrastGray}>{seg}</Text>),
       );
     }
   });
@@ -64,7 +64,7 @@ function MdTable({ rows, k, width }: { rows: string[]; k: number; width: number 
               return (
                 <Text key={ci}>
                   {ci > 0 ? '  ' : ''}
-                  <Text color={ri === 0 ? C.sky : C.white} bold={ri === 0}>{seg}</Text>{pad}
+                  <Text color={ri === 0 ? C.sky : C.contrastGray} bold={ri === 0}>{seg}</Text>{pad}
                 </Text>
               );
             })}

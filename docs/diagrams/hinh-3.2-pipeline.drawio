@@ -1,0 +1,70 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Hình 3.2 - Pipeline" id="pipeline-diagram">
+    <mxGraphModel dx="1934" dy="592" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1200" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;align=center;fontSize=15;fontStyle=1;" value="Hình 3.2. Luồng xử lý: phát hiện → tương quan → điều tra → lưu → hiển thị" vertex="1">
+          <mxGeometry height="30" width="600" x="120" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="s1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="&lt;b&gt;1. Collect Logs &amp;amp; Metrics&lt;/b&gt;&lt;br&gt;Log Collector + Metric Collector&lt;br&gt;(định kỳ 5s: log, Prometheus, Docker stats)" vertex="1">
+          <mxGeometry height="60" width="300" x="-140" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="s2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="&lt;b&gt;2. Detect&lt;/b&gt;&lt;br&gt;Anomaly Detector (@Scheduled 5s)&lt;br&gt;đối chiếu chỉ số với luật ngưỡng" vertex="1">
+          <mxGeometry height="60" width="300" x="250" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="s3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="&lt;b&gt;3. Alert Manager&lt;/b&gt;&lt;br&gt;Alert Manager: tạo Alert (ACTIVE),&lt;br&gt;đóng khi dịch vụ hồi phục" vertex="1">
+          <mxGeometry height="60" width="300" x="690" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="s4" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" value="&lt;b&gt;4. Correlation + debounce&lt;/b&gt;&lt;br&gt;Alert Correlator: gom AlertGroup&lt;br&gt;(Union-Find theo đồ thị phụ thuộc)" vertex="1">
+          <mxGeometry height="60" width="300" x="690" y="330" as="geometry" />
+        </mxCell>
+        <mxCell id="gate" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" value="Dispatch khi:&lt;br&gt;lắng 30s&lt;br&gt;hoặc tối đa 120s" vertex="1">
+          <mxGeometry height="105" width="190" x="305" y="307.5" as="geometry" />
+        </mxCell>
+        <mxCell id="s5" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" value="&lt;b&gt;5. Dispatch Investigation&lt;/b&gt;&lt;br&gt;AgentDispatcher (@Async)&lt;br&gt;semaphore = 2 phiên song song" vertex="1">
+          <mxGeometry height="60" width="300" x="250" y="470" as="geometry" />
+        </mxCell>
+        <mxCell id="s6" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" value="&lt;b&gt;6. Build Context&lt;/b&gt;&lt;br&gt;Context Builder: gói ngữ cảnh&lt;br&gt;(alert + log ±5 phút + metric + topology)" vertex="1">
+          <mxGeometry height="60" width="300" x="-140" y="470" as="geometry" />
+        </mxCell>
+        <mxCell id="s7" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="&lt;b&gt;7. AI Agent&lt;/b&gt;&lt;br&gt;vòng lặp 4 pha (gọi tool ↔ LLM)&lt;br&gt;→ List&amp;lt;IncidentReport&amp;gt;" vertex="1">
+          <mxGeometry height="60" width="300" x="-140" y="600" as="geometry" />
+        </mxCell>
+        <mxCell id="s8" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" value="&lt;b&gt;8. Persist Incident&lt;/b&gt;&lt;br&gt;persist Incident + gán incidentId&lt;br&gt;cho các Alert liên quan" vertex="1">
+          <mxGeometry height="60" width="300" x="250" y="600" as="geometry" />
+        </mxCell>
+        <mxCell id="s9" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" value="&lt;b&gt;9. Present (TUI)&lt;/b&gt;&lt;br&gt;phát event qua WebSocket → TUI&lt;br&gt;(started / turn / incident)" vertex="1">
+          <mxGeometry height="60" width="300" x="690" y="600" as="geometry" />
+        </mxCell>
+        <mxCell id="p1" edge="1" parent="1" source="s1" style="endArrow=classic;html=1;" target="s2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p2" edge="1" parent="1" source="s2" style="endArrow=classic;html=1;" target="s3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p3" edge="1" parent="1" source="s3" style="endArrow=classic;html=1;" target="s4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p4" edge="1" parent="1" source="s4" style="endArrow=classic;html=1;" target="gate">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p5" edge="1" parent="1" source="gate" style="endArrow=classic;html=1;fontSize=10;" target="s5" value="&lt;font style=&quot;font-size: 14px;&quot;&gt;đạt điều kiện&lt;/font&gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p6" edge="1" parent="1" source="s5" style="endArrow=classic;html=1;" target="s6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p7" edge="1" parent="1" source="s6" style="endArrow=classic;html=1;" target="s7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p8" edge="1" parent="1" source="s7" style="endArrow=classic;html=1;" target="s8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p9" edge="1" parent="1" source="s8" style="endArrow=classic;html=1;" target="s9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

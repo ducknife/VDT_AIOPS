@@ -68,8 +68,8 @@
 <div class="wrap">
 
   <header class="top">
-    <h1>VDT-AIOps — Kiến trúc &amp; Hạ tầng <span class="v">v1.2 · cập nhật 2026-06-08</span></h1>
-    <p class="sub">Tài liệu sống mô tả toàn bộ hệ thống: nửa <b>bị giám sát</b> (simulation stack) và nửa <b>đi giám sát</b> (AIOps app + observability). Cập nhật theo tiến độ phát triển.</p>
+    <h1>VDT-AIOps — Kiến trúc &amp; Hạ tầng <span class="v">v1.3 · cập nhật 2026-06-28</span></h1>
+    <p class="sub">Tài liệu sống mô tả toàn bộ hệ thống: nửa <b>bị giám sát</b> (simulation stack) và nửa <b>đi giám sát</b> (AIOps engine + observability + TUI). Pipeline đầy đủ <b>detect → correlate → diagnose (AI) → persist → TUI</b> đã chạy end-to-end.</p>
     <p class="legend">
       <span class="tag t-done">DONE</span> đã hoàn thiện
       <span class="tag t-wip">WIP</span> đang làm
@@ -80,268 +80,240 @@
 
   <!-- ============================================================ -->
   <h2>1. Sơ đồ tổng thể</h2>
-  <p>Hai nửa tách bạch theo nguyên lý <i>plant</i> (hệ bị điều khiển/giám sát) vs <i>observer</i> (hệ giám sát):</p>
+  <p>Ba khối: <i>plant</i> (hệ bị giám sát), <i>observer</i> (engine + observability, đóng container), và <i>operator UI</i> (TUI chạy ở terminal host):</p>
   <div class="diagram">
 <pre>
-╔══════════════════════════ DOCKER  (network: aiops-shared-network · bridge) ══════════════════════════╗
-║                                                                                                       ║
-║  ┌────────────┐   ┌─────────┐    ┌──────────┐    ┌────────────┐                                       ║
-║  │ traffic-gen│──>│  nginx  │───>│ node-api │─┬─>│  postgres  │  max 10 conn  ← nút thắt DB exhaustion ║
-║  │  (LOADGEN) │   │ (PROXY) │    │  (APP)   │ └─>│   redis    │  maxmem 256mb ← nút thắt OOM           ║
-║  └────────────┘   └────┬────┘    └────┬─────┘   └────────────┘                                        ║
-║  SIMULATION STACK      │ :80          │ :3000/metrics                                                  ║
-║  (docker-compose.yml)  │              │                                                                ║
-║                  ┌─────┴────┐  ┌──────┴─────┐  ┌──────────────┐   ┌──────────────┐                    ║
-║   exporters ────>│nginx-exp │  │postgres-exp│  │ redis-exp    │   │              │                    ║
-║                  │  :9113   │  │   :9187    │  │   :9121      │   │              │                    ║
-║                  └─────┬────┘  └─────┬──────┘  └──────┬───────┘   │  prometheus  │ :9090              ║
-║                        └─────────────┴──── scrape ────┴──────────>│              │                    ║
-║                                       node-api:3000/metrics ─────>└──────────────┘                    ║
-║  ┌──────────────────┐                                                                                 ║
-║  │  postgres-aiops  │ :5433   ← state store: logs · metrics · alerts · incidents                      ║
-║  └──────────────────┘                          OBSERVABILITY INFRA (docker-compose.backend.yml)       ║
-╚═══════════════════════════════════════════════════════════════════════════════════════════════════════╝
-        ▲ Docker API tcp://localhost:2375       ▲ localhost:5433        ▲ localhost:9090
-        │ list / inspect / logs / stats         │ JDBC                  │ HTTP PromQL
-  ┌─────┴─────────────────────────────────────────┴──────────────────────┴────────────────────────┐
-  │              AIOps APP — Spring Boot CLI   (chạy trên HOST, không đóng container)                │
-  │   DockerLogCollector │ MetricScraper │ Normalize → ContextBuilder → Query(4 pha) │ Spring Shell  │
-  └─────────────────────────────────────────────────────────────────────────────────────────────────┘
+╔══════════════════════════ DOCKER (network: aiops-shared-network · bridge) ════════════════════════════╗
+║  ┌────────────┐   ┌─────────┐    ┌──────────┐    ┌────────────┐                                        ║
+║  │ traffic-gen│──>│  nginx  │───>│ node-api │─┬─>│  postgres  │  max 10 conn  ← nút thắt DB exhaustion  ║
+║  │  (LOADGEN) │   │ (PROXY) │    │  (APP)   │ └─>│   redis    │  maxmem 256mb ← nút thắt OOM            ║
+║  └────────────┘   └────┬────┘    └────┬─────┘   └────────────┘   SIMULATION (docker-compose.yml)       ║
+║                  ┌─────┴───────────────┴── scrape ──┐                                                  ║
+║   exporters ────>│ nginx/postgres/redis-exp + node-api:3000/metrics │──>┌────────────┐ :9090          ║
+║                  └──────────────────────────────────┘                   │ prometheus │                ║
+║  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────────────┐   └─────┬──────┘                ║
+║  │postgres-aiops│  │ docker-proxy │  │   aiops-engine (Spring Boot)  │         │ PromQL               ║
+║  │  :5433 state │<─┤ socat 2375   │<─┤  collector·scraper·detector·  │<────────┘                      ║
+║  └──────────────┘  │  -> docker.  │  │  correlate·AGENT·WS :8088     │   OBSERVABILITY+ENGINE          ║
+║      JDBC ▲        │  sock        │  └───────────────┬──────────────┘   (docker-compose.backend.yml)  ║
+║          └─────────┴──────────────┴── Docker API ────┘ tcp://docker-proxy:2375                         ║
+╚════════════════════════════════════════════════════════╪══════════════════════════════════════════════╝
+                                  WebSocket ws://localhost:8088/ws/incidents │
+                                  ┌─────────────────────────────────────────┴───────────────┐
+                                  │   TUI (React Ink, Node) — chạy ở TERMINAL HOST            │
+                                  │   snapshot · live incidents · chat · ack/resolve          │
+                                  └───────────────────────────────────────────────────────────┘
 </pre>
   </div>
+  <p class="muted">Khác v1.2: engine giờ <b>đóng container</b> (không còn chạy trên host); truy cập Docker API qua <b>socat proxy</b> (không cần bật daemon TCP 2375 trên Docker Desktop); thêm <b>TUI React Ink</b> nối qua WebSocket.</p>
 
   <!-- ============================================================ -->
-  <h2>2. Hạ tầng — 3 lớp</h2>
+  <h2>2. Hạ tầng — 4 khối</h2>
 
   <div class="card">
-    <h3>Lớp 1 — Simulation stack <span class="tag t-done">DONE</span></h3>
-    <p>8 container giả lập một web stack điển hình — <b>đối tượng bị giám sát</b>. File: <code>aiops/infra/docker-compose.yml</code>.</p>
-    <p><b>Request path:</b> <code>traffic-gen</code> bắn HTTP mỗi 5s → <code>nginx:80</code> reverse proxy → <code>node-api:3000</code> → đọc <code>redis</code> (cache-aside), miss thì query <code>postgres</code>.</p>
+    <h3>Khối 1 — Simulation stack <span class="tag t-done">DONE</span></h3>
+    <p>8 container giả lập web stack điển hình — <b>đối tượng bị giám sát</b>. File <code>aiops/infra/docker-compose.yml</code>.</p>
+    <p><b>Request path:</b> <code>traffic-gen</code> bắn HTTP liên tục → <code>nginx:80</code> → <code>node-api:3000</code> → <code>redis</code> (cache-aside), miss thì <code>postgres</code>.</p>
   </div>
 
   <div class="card">
-    <h3>Lớp 2 — Observability infra <span class="tag t-done">DONE</span></h3>
-    <p>File: <code>aiops/infra/docker-compose.backend.yml</code> (join network dạng <code>external: true</code>).</p>
+    <h3>Khối 2 — Observability + Engine (container) <span class="tag t-done">DONE</span></h3>
+    <p>File <code>aiops/infra/docker-compose.backend.yml</code> (join network <code>external: true</code>):</p>
     <ul>
-      <li><b>prometheus</b> (:9090) — scrape mỗi 15s: <code>node-api</code> trực tiếp <code>/metrics</code>; nginx/postgres/redis qua exporter (<code>prometheus.yml</code>)</li>
-      <li><b>postgres-aiops</b> (:5433) — <b>state store của AIOps</b>: logs, metrics, alerts, incidents</li>
+      <li><b>prometheus</b> (:9090) — scrape <code>node-api</code> trực tiếp + nginx/postgres/redis qua exporter.</li>
+      <li><b>postgres-aiops</b> (:5433→5432) — state store: <code>service_logs</code>, <code>alerts</code>, <code>incidents</code>. Flyway tự dựng schema lúc khởi động.</li>
+      <li><b>docker-proxy</b> (socat) — bắc cầu <code>/var/run/docker.sock</code> → TCP <code>2375</code> nội bộ (xem mục 3).</li>
+      <li><b>aiops-engine</b> (Spring Boot, :8088) — bộ não always-on: collector · scraper · detector · correlate · AI agent · WebSocket server.</li>
     </ul>
   </div>
 
   <div class="card">
-    <h3>Lớp 3 — AIOps app (Spring Boot CLI) <span class="tag t-wip">WIP</span></h3>
-    <p>Chạy trên <b>host</b>, kết nối Docker qua API, đọc/ghi state qua Postgres. Chi tiết ở mục 4 &amp; 5.</p>
+    <h3>Khối 3 — TUI (React Ink) <span class="tag t-done">DONE</span></h3>
+    <p>Chạy ở <b>terminal host</b> (<code>npm start</code>, không đóng container). Nối engine qua <b>WebSocket</b> <code>ws://localhost:8088/ws/incidents</code>. Hiển thị snapshot incident active + sự kiện điều tra live + chat hỏi-đáp; thao tác ack/resolve. Chi tiết mục 8.</p>
   </div>
 
   <!-- ============================================================ -->
-  <h2>3. Triển khai — điểm cần nhớ</h2>
+  <h2>3. Truy cập Docker API — socat proxy <span class="tag t-done">DONE</span></h2>
+  <div class="note danger">
+    <b>Vì sao KHÔNG dùng <code>unix:///var/run/docker.sock</code> trực tiếp:</b> đã thử &amp; chứng minh — OS-level socket OK, nhưng transport <code>docker-java-transport-httpclient5 3.3.6</code> khi nhận <code>DOCKER_HOST=unix://…</code> lại đi <b>TCP tới host giả localhost:2375</b> (không làm unix domain socket) → <code>Connection refused</code>. Ngoài ra Dockerfile chạy <code>USER aiops</code> (non-root) → <code>permission denied</code> trên socket.
+  </div>
+  <p><b>Giải pháp:</b> container <code>docker-proxy</code> (image <code>alpine/socat</code>, chạy root, mount socket) bắc cầu <code>UNIX-CONNECT:/var/run/docker.sock</code> ↔ <code>TCP-LISTEN:2375</code>. Engine nối <b>TCP</b> (docker-java chạy TCP ổn định):</p>
   <table>
-    <tr><th>Khía cạnh</th><th>Thực tế hiện tại</th></tr>
-    <tr><td>App chạy ở đâu</td><td>Trên <b>host</b>, chưa đóng container. Cấu hình trỏ <code>localhost</code> (5433 / 9090 / 2375)</td></tr>
-    <tr><td>App ↔ Docker</td><td><code>DOCKER_HOST=tcp://localhost:2375</code> — Docker Desktop expose API không TLS. <code>docker-java</code> dùng để list / inspect / logs / stats</td></tr>
-    <tr><td>Mạng nội bộ</td><td><code>aiops-shared-network</code> (bridge). Container gọi nhau qua <b>tên service</b> (DNS nội bộ Docker)</td></tr>
-    <tr><td>Thứ tự khởi động</td><td><code>up</code> file <b>simulation trước</b> (tạo network) → rồi file <b>backend</b></td></tr>
-    <tr><td>Ports published</td><td>postgres 5432 · redis 6379 · node-api 3000 · nginx 8080→80 · exporters 9113/9187/9121 · prometheus 9090 · postgres-aiops 5433→5432</td></tr>
+    <tr><th>Chạy ở đâu</th><th><code>DOCKER_HOST</code></th><th>Ghi chú</th></tr>
+    <tr><td>Engine trong container (handoff)</td><td><code>tcp://docker-proxy:2375</code></td><td>resolve qua DNS service nội bộ Docker</td></tr>
+    <tr><td>Engine local bằng <code>mvn</code> (dev)</td><td><code>tcp://localhost:2375</code> (default)</td><td>proxy publish <code>127.0.0.1:2375</code> → khỏi bật toggle 2375</td></tr>
   </table>
+  <p><b>Lợi ích handoff:</b> giám khảo <b>không phải bật</b> "Expose daemon on tcp://localhost:2375 without TLS" trong Docker Desktop — <code>compose up</code> là chạy. TCP chỉ mở trong mạng nội bộ (và <code>127.0.0.1</code> cho dev).</p>
+  <div class="note"><b>Quy tắc cấu hình:</b> default trong <code>application.yaml</code> = giá trị cho <b>local</b> (<code>localhost</code>); container <b>đè bằng env</b> qua compose (12-Factor). Cùng nguyên tắc cho DB (<code>localhost:5433</code> ↔ <code>postgres-aiops:5432</code>) và Prometheus (<code>localhost:9090</code> ↔ <code>prometheus:9090</code>).</p>
 
   <!-- ============================================================ -->
-  <h2>4. AIOps app — 2 data plane</h2>
+  <h2>4. AIOps engine — 2 data plane <span class="tag t-done">DONE</span></h2>
   <div class="grid">
     <div class="card">
-      <h3>Log plane <span class="tag t-done">DONE</span></h3>
-      <p><code>DockerLogCollector</code>: mỗi container 1 <b>virtual thread</b> stream <code>docker logs</code> (stdout+stderr) → <code>buffer</code> (ConcurrentLinkedQueue) → flush vào <code>postgres-aiops</code> mỗi 2s (<code>@Scheduled</code>).</p>
-      <p class="muted">parseLevel(): ERROR / WARN / INFO; nginx 4xx-5xx → ERROR.</p>
+      <h3>Log plane</h3>
+      <p><code>LogCollector</code>: mỗi container 1 <b>virtual thread</b> stream <code>docker logs</code> → buffer → flush vào <code>service_logs</code> mỗi 2s. <code>LogTemplateExtractor</code> gom log theo template để giảm nhiễu. parseLevel: ERROR/WARN/INFO (nginx 4xx-5xx → ERROR).</p>
     </div>
     <div class="card">
-      <h3>Metric plane <span class="tag t-done">DONE</span></h3>
-      <p><code>MetricScraper</code> mỗi 5s, mỗi container 1 virtual thread:</p>
-      <ul>
-        <li><code>docker stats</code> → CPU% , mem% (mọi container)</li>
-        <li>riêng <code>node-api</code> → PromQL: <code>rate(http_requests_total[1m])</code>, <code>rate(http_errors_total[1m])</code>, <code>http_latency_avg_ms</code></li>
-        <li>→ lưu <code>MetricSnapshot</code> vào postgres-aiops</li>
-      </ul>
+      <h3>Metric plane</h3>
+      <p><code>MetricCollector</code> mỗi 5s: <code>docker stats</code> (CPU/mem) + PromQL qua <code>PrometheusClient</code> theo profile từng service (<code>MetricProfiles</code>): vd node-api <code>errorRate</code> (lỗi/giây), <code>latencyMs</code> (P99 histogram), redis <code>memUsedPercent</code>, postgres <code>connUtilPercent</code>, <code>isUp</code>.</p>
     </div>
   </div>
 
   <!-- ============================================================ -->
   <h2>5. Alert pipeline — phát hiện → gom nhóm → debounce dispatch <span class="tag t-done">DONE</span></h2>
-  <p>Hai vòng lặp <code>@Scheduled</code> độc lập, giao tiếp <b>qua DB</b> (không gọi thẳng nhau):</p>
+  <p>Hai vòng lặp <code>@Scheduled</code> độc lập, giao tiếp <b>qua DB</b>:</p>
   <div class="diagram">
 <pre>
 VÒNG A (5s)  AnomalyDetector.scan() → AlertManager.handle()  → GHI alert vào DB
                                                                     │ (DB = điểm gặp)
-VÒNG B (5s)  CorrelationTick.dispatchTick() ← ĐỌC alert active ─────┘
-             → correlate() (DSU) → group → debounce chín? → dispatch + mark INVESTIGATING
+VÒNG B (5s)  CorrelationTick ← ĐỌC alert (active=true, status=ACTIVE) ┘
+             → correlate() (DSU) → AlertGroup → debounce chín? → dispatch @Async → AGENT
 </pre>
   </div>
-
-  <h3>5.1 Detection &amp; Alert lifecycle <span class="tag t-done">DONE</span></h3>
   <ul>
-    <li><b>AnomalyDetector</b> (5s): duyệt rule (<code>aiops.anomaly.rules</code>), so <code>breached(value)</code>. Vượt ngưỡng → <code>DetectedAnomaly</code>; đo được khỏe → nạp <code>healthyKeys</code>.</li>
-    <li><b>AlertManager.handle</b>: tạo + dedup (<code>findByServiceAndTypeAndActiveTrue</code>); <b>resolve CHỈ khi đo được HEALTHY</b> — không resolve khi tín hiệu null/UNKNOWN (tránh false-resolve lúc service chết, vd <code>pg_up</code> biến mất).</li>
+    <li><b>AnomalyDetector</b>: duyệt rule <code>aiops.anomaly.rules</code>, so <code>breached(value)</code>. <b>AlertManager</b>: tạo + dedup; <b>resolve CHỈ khi đo được HEALTHY</b> (không false-resolve lúc tín hiệu null/service chết).</li>
+    <li><b>Trạng thái 2 trục</b> <code>active</code> (liveness, Detector ghi) × <code>status</code> ACTIVE→INVESTIGATING→DIAGNOSED (Agent ghi). Correlate lấy giao ô <code>active=true ∧ ACTIVE</code> — chống gửi lặp + tự dập blip nhất thời.</li>
+    <li><b>AlertCorrelator</b> (DSU): gom alert cùng/kề service ≤ 5 phút thành <code>AlertGroup</code>; rootCandidate = service bị phụ thuộc nhiều nhất trong cụm. Gom <b>THÔ</b> — agent sẽ tách 1 group → nhiều incident.</li>
+    <li><b>CorrelationTick</b> (stateless recompute): dispatch khi <code>now−updatedAt ≥ quietWindow(30s)</code> HOẶC <code>now−createdAt ≥ maxWait(120s)</code>; mark <code>INVESTIGATING</code> để dedup.</li>
   </ul>
-
-  <h3>5.2 Mô hình trạng thái 2 trục (active × status) <span class="tag t-done">DONE</span></h3>
-  <p>Hai trục <b>vuông góc</b>, hai tiến trình ghi độc lập:</p>
-  <table>
-    <tr><th></th><th>status=ACTIVE</th><th>INVESTIGATING</th><th>DIAGNOSED</th></tr>
-    <tr><td><b>active=true</b> (còn cháy)</td><td>① chưa gửi ← input correlate</td><td>② agent đang xử</td><td>③ đã chẩn, vẫn cháy</td></tr>
-    <tr><td><b>active=false</b> (đã hồi)</td><td>④ blip hồi trước khi gửi</td><td>⑤ hồi khi đang xử</td><td>⑥ đã chẩn &amp; tắt</td></tr>
-  </table>
-  <p class="muted"><code>active</code> do Detector ghi (liveness) · <code>status</code> do Agent ghi (tiến độ điều tra). Correlate lấy <b>giao ô ①</b> = <code>findByActiveTrueAndStatus(ACTIVE)</code> — vừa chống gửi lặp (②③) vừa tự dập blip nhất thời (④).</p>
-
-  <h3>5.3 AlertCorrelator — gom nhóm thô (DSU) <span class="tag t-done">DONE</span></h3>
-  <ul>
-    <li><b>related(a,b)</b>: cùng/kề service (vô hướng: downstream ∪ upstream) <b>VÀ</b> cách nhau ≤ 5 phút.</li>
-    <li><b>DSU connected-components</b> gom alert liên thông thành <code>AlertGroup</code>.</li>
-    <li><b>rootCandidate</b> = service được phụ thuộc nhiều nhất <i>trong cụm</i> (<code>max |upstream(s) ∩ cụm|</code>).</li>
-  </ul>
-  <div class="note warn"><b>Đánh đổi cố ý — gom THÔ:</b> victim chung (node-api phụ thuộc cả redis &amp; postgres) có thể bắc cầu 2 sự cố độc lập thành 1 cụm. Chấp nhận, vì topology đơn lẻ không quy được thủ phạm — <b>agent sẽ tách</b> 1 AlertGroup → <code>List&lt;Incident&gt;</code> bằng bằng chứng log/metric.</div>
-
-  <h3>5.4 CorrelationTick — debounce + dedup <span class="tag t-done">DONE</span></h3>
-  <p>Mỗi tick <b>tính lại từ đầu</b> (stateless, KHÔNG cache; mốc derive từ <code>detected_at</code>):</p>
-  <ul>
-    <li><code>updatedAt = max(detected_at)</code>, <code>createdAt = min(detected_at)</code> trong cụm.</li>
-    <li><b>Dispatch khi:</b> <code>(now − updatedAt ≥ quietWindow 30s)</code> <b>HOẶC</b> <code>(now − createdAt ≥ maxWait 120s)</code>.</li>
-    <li>Dispatch → set <code>status=INVESTIGATING</code> + <code>saveAll</code> → tick sau không lấy lại (dedup, verify live: 22 tick / 1 dispatch).</li>
-  </ul>
-  <p class="muted">quietWindow = "cascade đã lắng" (trigger thường) · maxWait = trần chống đói khi alert rỉ rả. Phải <b>poll</b> (<code>@Scheduled</code>) vì debounce phát hiện <i>sự im lặng</i> — non-event, không tự sinh trigger.</p>
 
   <!-- ============================================================ -->
-  <h2>6. AI Agent — vòng lặp Query 4 pha <span class="tag t-plan">PLANNED</span></h2>
-  <p>Hàm <code>Query</code> <b>không</b> chỉ gọi API một lần — nó là một <b>agentic loop</b> 4 pha, lặp đến khi đạt điều kiện dừng:</p>
-
+  <h2>6. AI Agent — vòng lặp Query 4 pha <span class="tag t-done">DONE</span></h2>
+  <p><code>Query.investigate(bundle, investigationId)</code> là <b>agentic loop tự viết</b> (KHÔNG để Spring AI tự chạy tool — <code>internalToolExecutionEnabled=false</code>), lặp đến điều kiện dừng:</p>
   <div class="card">
-    <div class="phase">
-      <div class="num p1">1</div>
-      <div class="body">
-        <b>Assembly Context</b> — lắp ráp ngữ cảnh.
-        Gom context bundle từ <code>ContextBuilder</code> (log + metric của service lỗi &amp; downstream, theo <code>ServiceGraph</code>). <b>Có thể compact</b> (tóm tắt/cắt) để vừa token budget khi ngữ cảnh lớn.
-      </div>
-    </div>
-    <div class="phase">
-      <div class="num p2">2</div>
-      <div class="body">
-        <b>Stream API Call</b> — gọi Claude dạng <b>stream</b> (Spring AI / Anthropic), nhận token + tool-use request theo thời gian thực.
-      </div>
-    </div>
-    <div class="phase">
-      <div class="num p3">3</div>
-      <div class="body">
-        <b>Tool Execution</b> — thực thi tool.
-        Có <b>thuật toán phân lô</b>: chia các tool-call thành lô — <b>song song trong lô</b> (độc lập), <b>tuần tự giữa các lô</b> (phụ thuộc nhau). Kết quả tool nạp lại vào ngữ cảnh.
-      </div>
-    </div>
-    <div class="phase">
-      <div class="num p4">4</div>
-      <div class="body">
-        <b>Stop or Continue</b> — quyết định lặp tiếp.
-        Dựa trên <b>quan sát tổng thể</b> ngữ cảnh để xây một <b>derived flag</b>; flag này quyết định có quay lại pha 1 hay kết thúc (đã đủ chẩn đoán / hết tool cần gọi / chạm giới hạn vòng lặp).
-      </div>
-    </div>
+    <div class="phase"><div class="num p1">1</div><div class="body">
+      <b>Assembly Context</b> — ghép <code>ContextBundle</code> (log+metric của service lỗi &amp; lân cận theo <code>ServiceGraph</code>) + schema JSON của <code>List&lt;IncidentReport&gt;</code> (qua <code>BeanOutputConverter</code>) vào prompt. <code>AutoCompact</code> tóm tắt nếu vượt token budget.
+    </div></div>
+    <div class="phase"><div class="num p2">2</div><div class="body">
+      <b>Model Call</b> — <code>chatModel.call(prompt)</code> với <code>ToolCallingChatOptions</code> (đăng ký <code>diagnosticTools</code>). <span class="muted">Investigation dùng call <b>blocking</b> (output JSON cấu trúc); chat mode mới dùng <b>stream</b>.</span>
+    </div></div>
+    <div class="phase"><div class="num p3">3</div><div class="body">
+      <b>Tool Execution</b> — <code>needsFollowUp = response.hasToolCalls()</code>. Nếu có: publish <code>AgentTurnEvent</code> (TUI hiện tool đang gọi) → <code>ToolCallingManager.executeToolCalls()</code> → nạp kết quả vào history → quay lại pha 2.
+    </div></div>
+    <div class="phase"><div class="num p4">4</div><div class="body">
+      <b>Stop / Force-final</b> — lặp tới khi hết tool-call hoặc chạm <code>maxTurns(8)</code>. Nếu hết lượt mà còn đòi tool → <code>forceFinalAnswer()</code> ép xuất JSON cuối. Parse qua <code>JsonExtractor</code> → <code>List&lt;IncidentReport&gt;</code>.
+    </div></div>
   </div>
 
-  <h3>Service Dependency Graph — truy vết service liên quan <span class="tag t-done">DONE</span></h3>
-  <p>Để pha 1 biết gom context của <i>những service nào</i>, dựng <code>ServiceGraph</code> có hướng, <b>auto-discover từ Docker</b>:</p>
+  <h3>Read tools (@Tool) <span class="tag t-done">DONE</span></h3>
+  <p>Đăng ký <b>tường minh</b> trong <code>AgentConfig.ToolCallbacks.from(...)</code> (không auto-discover); dùng chung cho cả investigate &amp; chat:</p>
+  <p class="muted"><code>getServiceLogs · getServiceMetrics · getServiceDependencies · queryMetrics · getActiveAlerts · getIncidentHistory · inspectContainer · listActiveIncidents · getIncident · getRecentIncidents</code>. Output cuối ghi qua <code>SaveIncidentReport</code>.</p>
+
+  <h3>ServiceGraph — auto-discover từ Docker <span class="tag t-done">DONE</span></h3>
+  <p>Đồ thị phụ thuộc có hướng dựng từ compose labels + env (<code>DATABASE_URL</code>, <code>REDIS_URL</code>). <b>Downstream</b> = nơi tìm root cause; <b>Upstream</b> = blast radius. Node <code>*-exporter</code> loại khỏi traversal.</p>
+
+  <!-- ============================================================ -->
+  <h2>7. Persist &amp; phát sự kiện → TUI <span class="tag t-done">DONE</span></h2>
+  <div class="diagram">
+<pre>
+CorrelationTick.dispatch ──@Async──> AgentDispatcher
+     → Query.investigate() → List&lt;IncidentReport&gt;
+     → SaveIncidentReport.persist() → List&lt;Incident&gt; (set alert.incidentId, status=DIAGNOSED)
+     → publish IncidentDiagnosedEvent ─┐
+                                       ▼
+            TuiBroadcaster (@EventListener) → WebSocket broadcast (JSON envelope {type,data})
+</pre>
+  </div>
+  <table>
+    <tr><th>Event → TUI</th><th>Khi nào</th></tr>
+    <tr><td><code>snapshot</code></td><td>lúc TUI connect (SnapshotProvider: top-5 incident chưa resolved)</td></tr>
+    <tr><td><code>started</code> / <code>turn</code> / <code>incident</code> / <code>failed</code></td><td>vòng đời 1 lần điều tra (bắt đầu · mỗi lượt tool · ra chẩn đoán · thất bại)</td></tr>
+    <tr><td><code>status</code></td><td>sau ack/resolve (TuiCommandService, AFTER_COMMIT)</td></tr>
+    <tr><td><code>chat-turn</code> / <code>answer-chunk</code> / <code>answer</code></td><td>chat mode: tool đang gọi · token stream · câu trả lời cuối</td></tr>
+  </table>
+  <p class="muted">Lệnh TUI→engine (cùng kênh WS): <code>ack</code> / <code>resolve</code> / <code>ask</code>. Bounded concurrency điều tra qua semaphore (<code>max-concurrent</code>).</p>
+
+  <!-- ============================================================ -->
+  <h2>8. TUI (React Ink) <span class="tag t-done">DONE</span></h2>
   <ul>
-    <li><b>Nguồn A</b> — compose labels: <code>com.docker.compose.service</code>, <code>com.docker.compose.depends_on</code></li>
-    <li><b>Nguồn B</b> — env vars: <code>DATABASE_URL=…@postgres</code>, <code>REDIS_URL=redis://redis</code> → suy ra cạnh phụ thuộc</li>
+    <li><b>Layout:</b> Header (logo + DUCKOMPOSE, viền chạy sáng) / Viewport cuộn theo dòng / InputBar / StatusBar. Theme <b>Panda</b> (nền tối, phối xanh-vàng).</li>
+    <li><b>Hai chế độ:</b> CHAT (gõ hỏi, agent tự tra qua tool) ↔ SELECT (Tab; ↑↓ chọn incident, <code>a/r/e</code> ack/resolve/expand).</li>
+    <li><b>Hiển thị điều tra live:</b> alert group → danh sách tool (tên + tham số + giờ, tự thu gọn khi xong, click mở) → incident (severity color-code, mở rộng xem summary/findings/hypotheses/remediation/evidence).</li>
+    <li><b>Chuột:</b> lăn cuộn · kéo scrollbar · click dòng-icon để mở/thu · click nút <code>[a][r][e]</code> · click tiêu đề mục để <b>copy</b> (OSC 52). Bôi đen text: Shift+kéo (native terminal).</li>
+    <li><b>Stream mượt:</b> token gom &amp; nhả kiểu "đánh máy"; thoát bằng <code>Ctrl+Q</code> (Ctrl+C tắt để copy an toàn).</li>
   </ul>
-  <table>
-    <tr><th>Hướng từ service lỗi A</th><th>Tên</th><th>Ý nghĩa</th></tr>
-    <tr><td><b>Downstream</b> (A gọi ai)</td><td>Dependencies</td><td>Nơi tìm <b>root cause</b></td></tr>
-    <tr><td><b>Upstream</b> (ai gọi A)</td><td>Dependents</td><td><b>Blast radius</b> — triệu chứng, không phải nguyên nhân</td></tr>
-  </table>
-  <p class="muted">Node <code>*-exporter</code> gắn role EXPORTER → loại khỏi traversal để không gây nhiễu. AI truy cập graph theo kiểu <b>hybrid</b>: ContextBuilder pre-build 1-hop, thêm <code>@Tool GetServiceDependencies</code> để AI tự đào sâu.</p>
+  <p class="muted">Backend (Spring AI 1.1.x) lọc emoji ở prompt; TUI lọc thêm ở tầng render (giữ ký hiệu văn bản). Conversation store <b>in-memory</b> (TTL 30') — nhớ trong phiên là đủ cho SRE, không persist lịch sử.</p>
 
   <!-- ============================================================ -->
-  <h2>7. Nút thắt cố ý &amp; kịch bản mô phỏng <span class="tag t-done">DONE</span></h2>
-  <p>Hệ được thiết kế để <i>hỏng theo kiểu thật</i>, điều khiển qua script ở <code>aiops/infra/scripts/</code>:</p>
+  <h2>9. Nút thắt cố ý &amp; kịch bản mô phỏng <span class="tag t-done">DONE</span></h2>
+  <p>Hệ được thiết kế để <i>hỏng theo kiểu thật</i>; script ở <code>aiops/infra/scripts/</code> (PowerShell). Severity <b>do agent chấm</b> theo bằng chứng, không hard-code.</p>
   <table>
-    <tr><th>Script</th><th>Cơ chế trigger</th><th>Nút thắt</th></tr>
-    <tr><td><code>simulate-redis-oom</code></td><td>đẩy data đầy redis</td><td><code>maxmemory 256mb</code></td></tr>
-    <tr><td><code>simulate-db-exhaustion</code></td><td>mở &gt;10 connection đồng thời</td><td><code>pgPool max: 10</code></td></tr>
-    <tr><td><code>simulate-load-spike</code></td><td>spam <code>/api/compute?n=</code></td><td>vòng lặp CPU trong node-api</td></tr>
-    <tr><td><code>simulate-nginx-down</code> / <code>container-down</code></td><td>stop container</td><td>health check fail</td></tr>
-    <tr><td><span class="muted">(/api/flaky?rate=0.3)</span></td><td>traffic-gen gọi sẵn</td><td>30% trả HTTP 500</td></tr>
+    <tr><th>Script</th><th>Cơ chế</th><th>Severity kỳ vọng</th></tr>
+    <tr><td><code>simulate-redis-oom</code></td><td>đẩy đầy redis (maxmem 256mb)</td><td>P1–P2</td></tr>
+    <tr><td><code>simulate-db-exhaustion</code></td><td>mở &gt;10 connection (pgPool max 10)</td><td>P1–P2</td></tr>
+    <tr><td><code>simulate-high-latency</code></td><td><code>/api/slow</code> concurrency cao → P99 &gt; 2s</td><td>P2–P3</td></tr>
+    <tr><td><code>simulate-load-spike</code></td><td><code>/api/flaky?rate=0.5</code> → error rate spike</td><td>P2</td></tr>
+    <tr><td><code>simulate-minor-latency</code></td><td>P99 ~2.1s chớm ngưỡng, tự hồi nhanh</td><td><b>P4</b> (blip)</td></tr>
+    <tr><td><code>simulate-container-down</code> (-Service nginx/node-api/…)</td><td>stop container</td><td>P1 (SERVICE_DOWN)</td></tr>
   </table>
 
   <!-- ============================================================ -->
-  <h2>8. Quyết định kiến trúc (Decision log)</h2>
+  <h2>10. Quyết định kiến trúc (Decision log)</h2>
   <div class="note">
-    <b>2026-05-30 — Log lưu PostgreSQL (không dùng Elasticsearch).</b>
-    Chốt dùng <code>postgres-aiops</code> cho cả log lẫn metric/state để <b>đồng bộ một nguồn dữ liệu</b>. ES nêu trong CLAUDE.md được gác lại — không wire trong phạm vi hiện tại.
+    <b>Log lưu PostgreSQL (không Elasticsearch).</b> Một nguồn dữ liệu (<code>postgres-aiops</code>) cho log + state. ES trong CLAUDE.md gác lại.
   </div>
   <div class="note">
-    <b>2026-05-30 — Tách CLIENT–SERVER: TUI (React Ink) ⇄ Backend (Java).</b>
-    Bỏ Spring Shell thuần. TUI viết bằng <b>React Ink</b> (Node), phát hành qua npm, chạy ở terminal host — KHÔNG đóng container. Java thành <b>engine always-on</b> (mô hình Prometheus/Grafana, không phải MCP-stdio của Claude Code): collector/scraper/anomaly chạy nền độc lập với vòng đời TUI.
+    <b>Tách CLIENT–SERVER + WebSocket.</b> Bỏ Spring Shell; TUI React Ink (host, npm) ⇄ Java engine always-on. Transport WebSocket (raw <code>TextWebSocketHandler</code> + JSON discriminated-union theo <code>type</code>, không STOMP). Bật lại Tomcat (đảo ràng buộc no-Tomcat/web-type-none trong CLAUDE.md).
+  </div>
+  <div class="note">
+    <b>Alert 2 trục (active × status) + Correlation gom THÔ.</b> Cần cả 2 trục để phân biệt "đã chẩn mà vẫn cháy" vs "đã chẩn &amp; tắt". DSU gom rộng (chấp nhận over-merge do victim-bridge), agent là trọng tài tách 1 AlertGroup → nhiều Incident.
+  </div>
+  <div class="note">
+    <b>Agent loop tự viết (LOCKED).</b> <code>internalToolExecutionEnabled=false</code> + tự lặp; <code>needsFollowUp = hasToolCalls</code>; structured output <code>List&lt;IncidentReport&gt;</code> qua BeanOutputConverter; <code>maxTurns</code> guard + <code>forceFinalAnswer</code>. Investigate = blocking call; chat = stream (MessageAggregator giữ tool qua aggregation).
   </div>
   <div class="note warn">
-    <b>2026-05-30 — Đảo ràng buộc CLAUDE.md: bật lại web server cho WebSocket.</b>
-    Kênh TUI⇄Backend chốt là <b>WebSocket</b> (full-duplex, hợp agent tương tác). Hệ quả: <code>spring-boot-starter-websocket</code> + bỏ exclusion Tomcat + <code>web-application-type</code> từ <code>none</code> → <code>servlet</code>. Hai mục "no Tomcat" và "web-application-type=none" trong CLAUDE.md <b>không còn áp dụng</b> cho kiến trúc client-server. Dùng <b>raw TextWebSocketHandler</b> + protocol JSON tự định nghĩa (KHÔNG STOMP). Protocol là discriminated-union theo <code>type</code> (phase / token / tool_start / tool_result / alert / done / error) khớp agent loop 4 pha.
-  </div>
-
-  <div class="note">
-    <b>2026-06-08 — Trạng thái alert 2 trục (active × status), không gộp 1 enum.</b>
-    <code>active</code> (liveness, Detector ghi) và <code>status</code> ACTIVE→INVESTIGATING→DIAGNOSED (điều tra, Agent ghi) là <b>2 chiều độc lập</b> — cần cả hai để biểu diễn được ô ③ ("đã chẩn mà vẫn cháy") khác ⑥ ("đã chẩn &amp; tắt"). Gộp 1 enum sẽ mất state này.
-  </div>
-  <div class="note">
-    <b>2026-06-08 — Correlation gom THÔ + Agent tách incident.</b>
-    AlertCorrelator (DSU) gom rộng, chấp nhận over-merge do "victim bridge". Tầng ngữ nghĩa (agent) mới là trọng tài: 1 <code>AlertGroup</code> → <code>List&lt;Incident&gt;</code>. Lý do: gom dư chỉ tốn 1 lần điều tra (rẻ); gom thiếu vỡ 1 sự cố thành nhiều điều tra trùng (tệ hơn).
-  </div>
-  <div class="note">
-    <b>2026-06-08 — Debounce dispatch: stateless recompute, KHÔNG cache.</b>
-    CorrelationTick tính lại group mỗi tick từ DB; mốc <code>createdAt/updatedAt</code> derive từ <code>detected_at</code> (không lưu riêng). Dispatch khi <code>now−updatedAt ≥ quietWindow(30s)</code> HOẶC <code>now−createdAt ≥ maxWait(120s)</code>. Bỏ cache (Caffeine/Redis) vì recompute trên n nhỏ là miễn phí và <b>sống sót qua restart</b>; dedup bằng <code>status</code> ở DB.
+    <b>2026-06-28 — Truy cập Docker qua socat TCP proxy (không unix://).</b> <code>docker-java-transport-httpclient5</code> không làm được unix domain socket (đi TCP tới placeholder → refused); container non-root còn bị permission denied. Chốt: sidecar <code>alpine/socat</code> bắc cầu socket → TCP nội bộ; engine nối <code>tcp://docker-proxy:2375</code>. Giám khảo khỏi bật toggle 2375 → zero-config khi vận chuyển code.
   </div>
   <div class="note danger">
-    <b>2026-06-08 — Bài học Flyway: KHÔNG sửa migration đã apply.</b>
-    Sửa V7 sau khi đã chạy → đổi checksum → <code>Validate failed: checksum mismatch</code>. Khắc phục: idempotent <code>ADD COLUMN IF NOT EXISTS</code> + xóa dòng V7 trong <code>flyway_schema_history</code> → re-apply sạch. <b>Quy tắc:</b> migration đã apply = bất biến; cần đổi thì thêm <code>V8</code>.
+    <b>Bài học Flyway: KHÔNG sửa migration đã apply.</b> Đổi checksum → <code>Validate failed</code>. Cần đổi thì thêm <code>V(n+1)</code> idempotent (<code>ADD COLUMN IF NOT EXISTS</code>).
   </div>
 
   <!-- ============================================================ -->
-  <h2>9. Cân nhắc khi đóng app vào container (tương lai)</h2>
-  <div class="note warn">
-    <b>Phần lớn chỉ là chỉnh config — nhưng có 1 điểm không chỉ là cổng: quyền truy cập Docker API.</b>
+  <h2>11. Chạy hệ thống (handoff)</h2>
+  <div class="card">
+    <p><b>Yêu cầu:</b> Docker Desktop (đang chạy) · Node.js 18+ (cho TUI). <b>Không</b> cần cài Java/Maven (engine build trong Docker). <b>Không</b> cần bật daemon TCP 2375.</p>
+    <pre>
+# 1) Điền khóa: tạo aiops/infra/.env từ .env.example -> đặt ANTHROPIC_API_KEY (+ 2 password)
+# 2) Dựng hạ tầng + engine (sim TRƯỚC để tạo network):
+cd aiops/infra
+docker compose up -d                                        # simulation stack
+docker compose -f docker-compose.backend.yml up -d --build  # engine + proxy + prometheus + state-db
+# 3) Chạy TUI:
+cd ../tui && npm install && npm start
+# 4) Tạo sự cố demo (PowerShell):
+./scripts/simulate-redis-oom.ps1        # hoặc simulate-minor-latency.ps1 (P4)
+    </pre>
   </div>
-  <table>
-    <tr><th>Hạng mục</th><th>Host (hiện tại)</th><th>Khi đóng container</th></tr>
-    <tr><td>Docker API</td><td><code>tcp://localhost:2375</code></td><td>❗ <code>localhost</code> = chính container đó → <b>không dùng được</b>. Mount <code>/var/run/docker.sock</code> hoặc trỏ <code>host.docker.internal:2375</code></td></tr>
-    <tr><td>Postgres state</td><td><code>localhost:5433</code></td><td><code>postgres-aiops:5432</code> (port <b>nội bộ</b>, không phải 5433)</td></tr>
-    <tr><td>Prometheus</td><td><code>localhost:9090</code></td><td><code>prometheus:9090</code></td></tr>
-    <tr><td>Network</td><td>—</td><td>join <code>aiops-shared-network</code> để resolve tên service</td></tr>
-  </table>
-  <p><b>Khuyến nghị:</b> externalize hết qua <b>env var</b> ngay từ giờ → lúc container hoá chỉ đổi env, <b>không sửa code</b>. <code>ServiceGraph</code> auto-discover không bị ảnh hưởng vì chỉ phụ thuộc <code>DOCKER_HOST</code>, không phụ thuộc localhost.</p>
+  <div class="note warn"><b>2 file .env riêng:</b> <code>infra/.env</code> (cho engine trong Docker) ‖ <code>app/.env</code> (cho chạy <code>mvn</code> local). Khoá sai/placeholder → Claude trả <code>401 invalid x-api-key</code> → TUI hiện "Sorry, I can't handle this question". Cả hai đều gitignore (<code>*.env</code>).</div>
 
   <!-- ============================================================ -->
-  <h2>10. Trạng thái thành phần</h2>
+  <h2>12. Trạng thái thành phần</h2>
   <table>
-    <tr><th>Thành phần</th><th>File (rel. <code>…/com/vdt/aiops/</code>)</th><th>Trạng thái</th></tr>
-    <tr><td>LogCollector (stream + flush)</td><td><code>monitoring/logcollector/LogCollector.java</code></td><td><span class="tag t-done">DONE</span></td></tr>
-    <tr><td>LogTemplateExtractor (gom log theo template)</td><td><code>monitoring/logcollector/LogTemplateExtractor.java</code></td><td><span class="tag t-done">DONE</span></td></tr>
-    <tr><td>MetricCollector + PrometheusClient</td><td><code>monitoring/metricscraper/*.java</code></td><td><span class="tag t-done">DONE</span></td></tr>
-    <tr><td>ServiceGraph + Builder (auto-discover)</td><td><code>topology/ServiceGraph.java</code>, <code>ServiceGraphBuilder.java</code></td><td><span class="tag t-done">DONE</span></td></tr>
-    <tr><td>AnomalyDetector (scan 5s, rules)</td><td><code>monitoring/detection/AnomalyDetector.java</code></td><td><span class="tag t-done">DONE</span></td></tr>
-    <tr><td>AlertManager (create / dedup / resolve)</td><td><code>monitoring/alertmanager/AlertManager.java</code></td><td><span class="tag t-done">DONE</span></td></tr>
-    <tr><td>Alert + AlertStatus enum + <code>V7</code></td><td><code>monitoring/alertmanager/Alert.java</code>, <code>enums/AlertStatus.java</code></td><td><span class="tag t-done">DONE</span></td></tr>
-    <tr><td>AlertCorrelator (DSU gom nhóm)</td><td><code>monitoring/alertmanager/AlertCorrelator.java</code></td><td><span class="tag t-done">DONE</span></td></tr>
-    <tr><td>CorrelationTick (debounce + dedup)</td><td><code>monitoring/alertmanager/CorrelationTick.java</code></td><td><span class="tag t-done">DONE</span></td></tr>
-    <tr><td>ContextBuilder + ContextBundle (<code>build(AlertGroup)</code>)</td><td><code>agent/context/*.java</code></td><td><span class="tag t-done">DONE</span></td></tr>
-    <tr><td>AutoCompact (kiểm tra cần nén context)</td><td><code>agent/context/compact/AutoCompact.java</code></td><td><span class="tag t-wip">WIP</span></td></tr>
-    <tr><td>Query (agent loop 4 pha)</td><td><code>agent/loop/Query.java</code></td><td><span class="tag t-plan">PLANNED</span></td></tr>
-    <tr><td>@Tool read (GetServiceLogs/Metrics/Dependencies, QueryMetrics, GetActiveAlerts, GetIncidentHistory, InspectContainer)</td><td><code>tools/read/*.java</code></td><td><span class="tag t-wip">WIP</span> (skeleton)</td></tr>
-    <tr><td>SaveIncidentReport (@Tool write)</td><td><code>tools/write/SaveIncidentReport.java</code></td><td><span class="tag t-wip">WIP</span> (skeleton)</td></tr>
-    <tr><td>Incident entity + quan hệ incident↔alert</td><td><span class="muted">(chưa tạo — bước kế)</span></td><td><span class="tag t-plan">PLANNED</span></td></tr>
-    <tr><td>dispatch() → ContextBuilder → Agent (cắm thật)</td><td><code>monitoring/alertmanager/CorrelationTick.java</code> (stub)</td><td><span class="tag t-todo">TODO</span></td></tr>
+    <tr><th>Thành phần</th><th>File (rel. <code>…/com/vdt/aiops/</code> hoặc khác)</th><th>Trạng thái</th></tr>
+    <tr><td>LogCollector + LogTemplateExtractor</td><td><code>monitoring/logcollector/*</code></td><td><span class="tag t-done">DONE</span></td></tr>
+    <tr><td>MetricCollector + PrometheusClient + MetricProfiles</td><td><code>monitoring/metricscraper/*</code></td><td><span class="tag t-done">DONE</span></td></tr>
+    <tr><td>ServiceGraph + Builder (auto-discover)</td><td><code>topology/*</code></td><td><span class="tag t-done">DONE</span></td></tr>
+    <tr><td>AnomalyDetector / AlertManager / Correlator / Tick</td><td><code>monitoring/detection/*</code>, <code>monitoring/alertmanager/*</code></td><td><span class="tag t-done">DONE</span></td></tr>
+    <tr><td>ContextBuilder + ContextBundle</td><td><code>agent/context/*</code></td><td><span class="tag t-done">DONE</span></td></tr>
+    <tr><td>Query (agent loop 4 pha)</td><td><code>agent/loop/Query.java</code></td><td><span class="tag t-done">DONE</span></td></tr>
+    <tr><td>AgentDispatcher (@Async investigate → persist → event)</td><td><code>agent/AgentDispatcher.java</code></td><td><span class="tag t-done">DONE</span></td></tr>
+    <tr><td>Read tools + SaveIncidentReport</td><td><code>tools/read/*</code>, <code>utils/SaveIncidentReport.java</code></td><td><span class="tag t-done">DONE</span></td></tr>
+    <tr><td>Incident schema (V8) + alert FK</td><td><code>agent/incident/*</code>, <code>db/migration/V8…</code></td><td><span class="tag t-done">DONE</span></td></tr>
+    <tr><td>Chat mode + stream + AutoCompact + conversation store</td><td><code>agent/interact/*</code></td><td><span class="tag t-done">DONE</span></td></tr>
+    <tr><td>WebSocket (handler + broadcaster + commands + snapshot)</td><td><code>config/websocket/*</code></td><td><span class="tag t-done">DONE</span></td></tr>
+    <tr><td>TUI React Ink (viewport · chat · mouse · copy · theme)</td><td><code>aiops/tui/src/*</code></td><td><span class="tag t-done">DONE</span></td></tr>
+    <tr><td>Đóng container engine + socat proxy (handoff)</td><td><code>aiops/app/Dockerfile</code>, <code>infra/docker-compose.backend.yml</code></td><td><span class="tag t-done">DONE</span></td></tr>
+    <tr><td>Scale ngang (conversation store → Redis/DB)</td><td><span class="muted">(future work)</span></td><td><span class="tag t-plan">PLANNED</span></td></tr>
   </table>
 
   <footer>
     <p><b>Changelog</b></p>
     <ul>
-      <li><b>2026-05-30 (v1)</b> — Tạo tài liệu. Ghi nhận: log → PostgreSQL; thiết kế Query 4 pha; ServiceGraph auto-discover; cân nhắc container hoá.</li>
-      <li><b>2026-05-30 (v1.1)</b> — Tách client-server: TUI React Ink (host, npm) ⇄ Java engine always-on. Chốt transport WebSocket (raw handler + JSON protocol khớp 4 pha). Đảo ràng buộc no-Tomcat/web-type-none. Externalize config DB+Prometheus ra env var (12-Factor III) + .gitignore chặn .env.</li>
-      <li><b>2026-06-08 (v1.2)</b> — Hoàn thiện <b>Alert pipeline</b> (mục 5): AnomalyDetector → AlertManager (resolve khi-HEALTHY) → AlertCorrelator (DSU) → CorrelationTick (debounce quietWindow/maxWait + dedup, verify live). Mô hình trạng thái 2 trục <code>active × status</code> (enum AlertStatus, migration V7). ServiceGraph + ContextBuilder <code>build(AlertGroup)</code> + ContextBundle mang cả cụm. Decision log: gom-thô-agent-tách, debounce-stateless-no-cache, bài học Flyway checksum. Đổi theme tài liệu sang xanh + trắng. Tiếp theo: Incident schema + agent loop.</li>
+      <li><b>2026-05-30 (v1 / v1.1)</b> — Tạo tài liệu; log→PostgreSQL; tách client-server TUI⇄engine; transport WebSocket; externalize config ra env.</li>
+      <li><b>2026-06-08 (v1.2)</b> — Hoàn thiện Alert pipeline (Detector→AlertManager→Correlator→Tick); trạng thái 2 trục; ServiceGraph + ContextBuilder.</li>
+      <li><b>2026-06-28 (v1.3)</b> — Pipeline end-to-end: <b>Agent loop 4 pha DONE</b> (manual loop, structured output, maxTurns/force-final), Incident schema V8 + persist → IncidentDiagnosedEvent → WS broadcast, <b>chat mode + token-stream</b>, full read-tools + getRecentIncidents. <b>TUI React Ink DONE</b> (viewport/chat/mouse/copy/Panda theme). <b>Engine đóng container</b> + truy cập Docker qua <b>socat proxy</b> (bỏ unix://, bỏ toggle 2375). Thêm mục Chạy hệ thống (handoff) + kịch bản P4. Model <code>claude-sonnet-4-6</code>.</li>
     </ul>
-    <p class="muted">Tài liệu sống — cập nhật khi kiến trúc thay đổi. Đường dẫn file Java tương đối tới <code>aiops/app/src/main/java/com/vdt/aiops/</code>.</p>
+    <p class="muted">Tài liệu sống — cập nhật khi kiến trúc thay đổi.</p>
   </footer>
 
 </div>

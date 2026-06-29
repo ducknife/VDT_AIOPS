@@ -1,24 +1,31 @@
-# recover.ps1 — "skip"/dừng lỗi đã mô phỏng (đưa hệ về khoẻ)
+# recover.ps1 -- dua he ve khoe sau khi mo phong loi.
+# Chi recover cac sim de lai TRANG THAI BEN:
+#   - container-down : container bi stop      -> docker start
+#   - redis-oom      : redis day flood keys   -> xoa keys
+#   - db-exhaustion  : pg_sleep giu connection-> kill connection
+# Cac sim "nhe" (load-spike / high-latency / minor-latency) TU HOI khi ngung tai -> KHONG can recover.
+#
 # Usage:
-#   .\recover.ps1                  # heal TẤT CẢ (mặc định)
-#   .\recover.ps1 redis-oom        # chỉ heal redis OOM
-#   .\recover.ps1 container-down   # restart container đang stop
-#   .\recover.ps1 db-exhaustion    # kill connection pg_sleep đang giữ
+#   .\recover.ps1                  # heal TAT CA (mac dinh)
+#   .\recover.ps1 redis-oom        # chi xoa flood keys
+#   .\recover.ps1 container-down   # start lai container sim dang stop
+#   .\recover.ps1 db-exhaustion    # kill connection pg_sleep dang giu
 param(
-    [ValidateSet("all","redis-oom","container-down","nginx-down","db-exhaustion")]
+    [ValidateSet("all", "redis-oom", "container-down", "db-exhaustion")]
     [string]$Scenario = "all"
 )
 
 function Recover-RedisOom {
-    Write-Host "[recover] redis-oom: xoá flood keys..." -ForegroundColor Green
-    $n = docker exec aiops-redis redis-cli EVAL "local ks=redis.call('keys','oom:flood:*') for _,k in ipairs(ks) do redis.call('del',k) end return #ks" 0 2>&1
+    Write-Host "[recover] redis-oom: xoa flood keys (oom:flood:*)..." -ForegroundColor Green
+    $n = docker exec aiops-redis redis-cli EVAL `
+        "local ks=redis.call('keys','oom:flood:*') for _,k in ipairs(ks) do redis.call('del',k) end return #ks" 0 2>&1
     Write-Host "          deleted $n keys" -ForegroundColor Gray
 }
 
 function Recover-Containers {
-    Write-Host "[recover] restart container sim đang stop..." -ForegroundColor Green
-    foreach ($c in @("aiops-nginx","aiops-node-api","aiops-postgres","aiops-redis")) {
-        $running = (docker inspect -f '{{.State.Running}}' $c 2>$null)
+    Write-Host "[recover] start lai container sim dang stop..." -ForegroundColor Green
+    foreach ($c in @("aiops-nginx", "aiops-node-api", "aiops-postgres", "aiops-redis")) {
+        $running = docker inspect -f '{{.State.Running}}' $c 2>$null
         if ($running -eq "false") {
             docker start $c | Out-Null
             Write-Host "          started $c" -ForegroundColor Gray
@@ -34,11 +41,10 @@ function Recover-Db {
 }
 
 switch ($Scenario) {
-    "redis-oom"      { Recover-RedisOom }
+    "redis-oom" { Recover-RedisOom }
     "container-down" { Recover-Containers }
-    "nginx-down"     { Recover-Containers }
-    "db-exhaustion"  { Recover-Db }
-    "all"            { Recover-Containers; Recover-RedisOom; Recover-Db }
+    "db-exhaustion" { Recover-Db }
+    "all" { Recover-Containers; Recover-RedisOom; Recover-Db }
 }
 
 Write-Host "[done] recovered: $Scenario" -ForegroundColor Cyan

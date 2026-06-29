@@ -67,10 +67,7 @@ public class Query {
         // prompt send to llm
         Prompt prompt = new Prompt(buildMessages(bundle, converter), options);
 
-        // TODO: compact check (token budget) - defer, AutoCompact stub
-
-        /* Phase 2: Stream API Call: P A: temp: call block */
-        // TODO: Stream call when build TUI
+        /* Phase 2: Call Block*/
         ChatResponse response = chatModel.call(prompt);
         boolean needsFollowUp = response.hasToolCalls();
 

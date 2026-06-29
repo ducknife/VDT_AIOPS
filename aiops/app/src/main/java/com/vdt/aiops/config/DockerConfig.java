@@ -26,7 +26,7 @@ public class DockerConfig {
                     .withDockerHost(dockerProperties.getHost())
                     .build();
 
-        /* Http client (connect to docker engine) */
+        /* Http client (connect to docker engine qua socat proxy: tcp://docker-proxy:2375) */
         var httpClient = new ApacheDockerHttpClient.Builder()
                     .dockerHost(config.getDockerHost())
                     .maxConnections(50) /* max 50 http connect */

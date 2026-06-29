@@ -1,0 +1,28 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Hình 3.4 - ER" id="er-diagram">
+    <mxGraphModel dx="1030" dy="562" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="700" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;align=center;fontSize=16;fontStyle=1;" value="Hình 3.4. Sơ đồ thực thể (ER) — Lược đồ dữ liệu AIOps" vertex="1">
+          <mxGeometry height="30" width="540" x="280" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="alerts" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="&lt;b&gt;alerts&lt;/b&gt;&lt;hr&gt;&lt;u&gt;id&lt;/u&gt; : BIGINT (PK)&lt;br&gt;service : VARCHAR&lt;br&gt;type : AnomalyType&lt;br&gt;message : VARCHAR&lt;br&gt;status : AlertStatus&lt;br&gt;detected_at : TIMESTAMP&lt;br&gt;resolved_at : TIMESTAMP&lt;br&gt;is_active : BOOLEAN&lt;br&gt;&lt;i&gt;incident_id&lt;/i&gt; : BIGINT (FK)&lt;br&gt;investigation_attempts : INT" vertex="1">
+          <mxGeometry height="240" width="240" x="90" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="incidents" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fillColor=#d5e8d4;strokeColor=#82b366;" value="&lt;b&gt;incidents&lt;/b&gt;&lt;hr&gt;&lt;u&gt;id&lt;/u&gt; : BIGINT (PK)&lt;br&gt;service : VARCHAR&lt;br&gt;title : VARCHAR&lt;br&gt;severity : Severity (P1–P4)&lt;br&gt;summary : VARCHAR&lt;br&gt;root_cause : VARCHAR&lt;br&gt;investigation_ms : BIGINT&lt;br&gt;analyzed_at : TIMESTAMP&lt;br&gt;status : IncidentStatus&lt;br&gt;investigation_id : VARCHAR&lt;br&gt;validated_findings : JSONB&lt;br&gt;hypotheses : JSONB&lt;br&gt;recommended_actions : JSONB&lt;br&gt;cited_evidence : JSONB" vertex="1">
+          <mxGeometry height="300" width="270" x="440" y="120" as="geometry" />
+        </mxCell>
+        <mxCell id="logs" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fillColor=#ffe6cc;strokeColor=#d79b00;" value="&lt;b&gt;service_logs&lt;/b&gt;&lt;hr&gt;&lt;u&gt;id&lt;/u&gt; : BIGINT (PK)&lt;br&gt;service : VARCHAR&lt;br&gt;log_level : LogLevel&lt;br&gt;message : TEXT&lt;br&gt;logged_at : TIMESTAMP" vertex="1">
+          <mxGeometry height="140" width="220" x="800" y="170" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" edge="1" parent="1" source="alerts" style="edgeStyle=entityRelationEdgeStyle;rounded=0;html=1;startArrow=ERmany;startFill=0;endArrow=ERone;endFill=0;fontSize=11;" target="incidents" value="incident_id&#xa;(N : 1)">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="logs" style="edgeStyle=entityRelationEdgeStyle;rounded=0;html=1;dashed=1;startArrow=none;endArrow=open;fontSize=11;fontColor=#999999;strokeColor=#999999;" target="incidents" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

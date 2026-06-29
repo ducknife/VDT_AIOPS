@@ -58,28 +58,26 @@ public class TuiBroadcaster {
                 "newStatus", e.getStatus()));
     }
 
-    // publish answer of agent
+    // CHAT events -> only response exactly TUI ask, not broadcast
     @EventListener
     public void onChatAnswer(ChatAnswerEvent e) {
-        send("answer", Map.of(
+        sendToConversation("answer", e.getConversationId(), Map.of(
                 "conversationId", e.getConversationId(),
                 "text", e.getText()));
     }
 
-    // publish chat turn event
     @EventListener
     public void onChatTurn(ChatTurnEvent e) {
-        send("chat-turn", Map.of(
+        sendToConversation("chat-turn", e.getConversationId(), Map.of(
                 "conversationId", e.getConversationId(),
                 "tools", e.getTools()));
     }
 
     @EventListener
     public void onChatChunk(ChatChunkEvent e) {
-        send("answer-chunk", Map.of(
-            "conversationId", e.getConversationId(),
-            "delta", e.getDelta()
-        ));
+        sendToConversation("answer-chunk", e.getConversationId(), Map.of(
+                "conversationId", e.getConversationId(),
+                "delta", e.getDelta()));
     }
 
     /* Wrap payload in a typed envelope so the TUI knows how to handle it. */
@@ -103,5 +101,16 @@ public class TuiBroadcaster {
                         .data(data)
                         .build());
         handler.broadcast(json);
+    }
+
+    /* CHAT: send to exactly TUI ask, not broadcast */
+    @SneakyThrows
+    private void sendToConversation(String type, String conversationId, Object data) {
+        String json = objectMapper.writeValueAsString(
+                TuiMessage.builder()
+                        .type(type)
+                        .data(data)
+                        .build());
+        handler.sendTo(conversationId, json);
     }
 }
