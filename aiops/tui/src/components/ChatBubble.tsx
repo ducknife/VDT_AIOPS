@@ -11,8 +11,8 @@ import { WaveSpinner } from './WaveSpinner';
 import { Markdown } from './Markdown';
 
 function chatLabel(item: ChatItem): string {
-  const last = item.turns.at(-1)?.tools.at(-1)?.name;
-  return last ? `${last}() · processing...` : 'Thinking...';
+  if (item.turns.length === 0) return 'Thinking...';            // mới đầu: đang suy nghĩ
+  return `Running tools · turn ${item.turns.length} ...`;       // đã chạy tool: đổi nhãn
 }
 
 export function ChatUser({ item, width = 40 }: { item: ChatItem; width?: number }) {

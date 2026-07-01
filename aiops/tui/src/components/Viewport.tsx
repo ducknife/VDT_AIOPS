@@ -6,7 +6,7 @@ import { Box, Text, measureElement } from 'ink';
 import type { State } from '../store/useFeed';
 import { InvestigationCard } from './InvestigationCard';
 import { ChatUser, ChatHead, ChatBody } from './ChatBubble';
-import { TurnToggle, TurnDetail } from './TurnList';
+import { TurnDivider, TurnBody } from './TurnList';
 import { IncidentMeta, IncidentBody, IncidentAction, incidentSections, SectionHeader, incidentFullText } from './IncidentRow';
 import { Scrollbar } from './Scrollbar';
 import { C } from '../utils/theme';
@@ -91,10 +91,18 @@ export const Viewport = forwardRef<ViewportHandle, Props>(function Viewport(
     }
   };
 
-  const pushTurns = (id: string, turns: any[], open: boolean) => {
+  // accordion theo TỪNG turn: mặc định chỉ turn cuối MỞ khi đang chạy (live);
+  // turn mới tới -> turn cũ tự thu; xong (live=false) -> thu hết. Click divider để lật.
+  const pushTurns = (id: string, turns: any[], live: boolean) => {
     if (!turns || turns.length === 0) return;
-    push({ type: 'turntoggle', id }, <TurnToggle turns={turns} open={open} />);
-    if (open) push({ type: 'spacer' }, <TurnDetail turns={turns} />);
+    turns.forEach((turn, i) => {
+      const active = live && i === turns.length - 1;
+      const key = `${id}:${i}`;
+      const defOpen = active;
+      const open = expandedTurns.has(key) ? !defOpen : defOpen;
+      push({ type: 'turntoggle', id: key }, <TurnDivider index={i} active={active} open={open} />);
+      if (open) push({ type: 'spacer' }, <TurnBody turn={turn} />);
+    });
   };
 
   if (state.snapshot.length > 0) {
@@ -108,14 +116,14 @@ export const Viewport = forwardRef<ViewportHandle, Props>(function Viewport(
   state.live.forEach((it) => {
     if (it.kind === 'investigation') {
       push({ type: 'spacer' }, <InvestigationCard inv={it} width={w} />);
-      pushTurns(it.id, it.turns, it.status === 'analyzing' || expandedTurns.has(it.id));
+      pushTurns(it.id, it.turns, it.status === 'analyzing');
       it.incidents.forEach((inc, i) => pushIncident(inc, `${it.id}-inc-${inc.id ?? i}`));
     } else if (it.role === 'user') {
       push({ type: 'spacer' }, <ChatUser item={it} width={w} />);
     } else {
       // click dòng "● duckompose" -> copy nguyên câu trả lời (khi đã xong)
       push(it.text ? { type: 'copy', text: it.text, label: 'answer' } : { type: 'spacer' }, <ChatHead item={it} />);
-      pushTurns(it.id, it.turns, !!it.streaming || expandedTurns.has(it.id));
+      pushTurns(it.id, it.turns, !!it.streaming);
       push({ type: 'spacer' }, <ChatBody item={it} width={w} />);
     }
   });

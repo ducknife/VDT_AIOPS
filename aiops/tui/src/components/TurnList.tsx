@@ -1,52 +1,52 @@
-// Turn (tool) hiển thị tách 2 phần để click CHÍNH XÁC:
-//  - TurnToggle: 1 DÒNG có icon ▸/▾ -> đây là dòng DUY NHẤT click để mở/thu.
-//  - TurnDetail: danh sách tool + tham số (không bắt click).
+// Accordion theo TỪNG turn:
+//  - TurnDivider: 1 DÒNG "đường gạch xám mờ" có ▸/▾ + "turn i" ở GIỮA (dấu … khi đang chạy).
+//    Đây là dòng DUY NHẤT click để mở/thu turn đó.
+//  - TurnBody: danh sách tool + tham số của MỘT turn (không bắt click).
 import { Box, Text } from 'ink';
 import type { Turn } from '../store/useFeed';
 import { C } from '../utils/theme';
 import { clock, argEntries } from '../utils/format';
 
-const countTools = (turns: Turn[]) => turns.reduce((a, t) => a + t.tools.length, 0);
-
-// DÒNG icon mở/thu (block click được)
-export function TurnToggle({ turns, open }: { turns: Turn[]; open: boolean }) {
-  if (!turns || turns.length === 0) return null;
-  const n = countTools(turns);
+// DÒNG toggle của 1 turn (sát lề trái, KHÔNG có đường gạch) — block click được
+export function TurnDivider({
+  index, active, open,
+}: { index: number; active: boolean; open: boolean }) {
+  const marker = open ? '▾' : '▸';
+  const labelColor = active ? C.lav : C.midnight; // đang chạy = tím khớp tool; xong = xám mờ
   return (
-    <Text color={C.muted}>
-      <Text color={C.lightGreen}>{open ? '▾ ' : '▸ '}</Text>
-      <Text color={C.sky} bold>{n}</Text> tool call{n > 1 ? 's' : ''} · click để {open ? 'thu gọn' : 'mở rộng'}
-    </Text>
+    <Box marginTop={1}>
+      <Text color={C.muted}>{`${marker} `}</Text>
+      <Text color={labelColor} bold={active}>{`turn ${index + 1}`}</Text>
+      {active ? <Text color={C.lav}>{' …'}</Text> : null}
+    </Box>
   );
 }
 
-// Danh sách chi tiết (không click)
-export function TurnDetail({ turns }: { turns: Turn[] }) {
-  if (!turns || turns.length === 0) return null;
+// Chi tiết tool của MỘT turn (không click)
+export function TurnBody({ turn }: { turn: Turn }) {
+  if (!turn || turn.tools.length === 0) return null;
   return (
     <Box flexDirection="column">
-      {turns.flatMap((turn, ti) =>
-        turn.tools.map((t, i) => {
-          const entries = argEntries(t.arguments);
-          return (
-            <Box key={`${ti}-${i}`} flexDirection="column" marginTop={1}>
-              <Text>
-                <Text color={C.midnight}>[{clock(turn.at)}]</Text> <Text color={C.lav} bold>{t.name}</Text>
-              </Text>
-              {entries.length === 0 ? (
-                <Text color={C.midnight}>{'    '}(no args)</Text>
-              ) : (
-                entries.map(([k, v], j) => (
-                  <Text key={j} color={C.muted} wrap="wrap">
-                    {'    '}<Text color={C.lightGreen}>• </Text>
-                    {k ? <Text color={C.lightBlue}>{k}: </Text> : null}{v}
-                  </Text>
-                ))
-              )}
-            </Box>
-          );
-        }),
-      )}
+      {turn.tools.map((t, i) => {
+        const entries = argEntries(t.arguments);
+        return (
+          <Box key={i} flexDirection="column" marginTop={1}>
+            <Text>
+              <Text color={C.midnight}>[{clock(turn.at)}]</Text> <Text color={C.lav} bold>{t.name}</Text>
+            </Text>
+            {entries.length === 0 ? (
+              <Text color={C.midnight}>{'    '}(no args)</Text>
+            ) : (
+              entries.map(([k, v], j) => (
+                <Text key={j} color={C.muted} wrap="wrap">
+                  {'    '}<Text color={C.lightGreen}>• </Text>
+                  {k ? <Text color={C.lightBlue}>{k}: </Text> : null}{v}
+                </Text>
+              ))
+            )}
+          </Box>
+        );
+      })}
     </Box>
   );
 }

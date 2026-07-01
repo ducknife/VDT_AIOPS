@@ -9,11 +9,8 @@ const borderByStatus = (s: Investigation['status']) =>
   s === 'failed' ? C.danger : s === 'diagnosed' ? C.sky : C.warning;
 
 function analyzingLabel(inv: Investigation): string {
-  if (inv.turns.length === 0) return 'Thinking...';
-  const last = inv.turns.at(-1)?.tools.at(-1)?.name;
-  return last
-    ? `${last}() · turn ${inv.turns.length}...`
-    : `Reasoning · turn ${inv.turns.length}...`;
+  if (inv.turns.length === 0) return 'Analyzing...';           // mới đầu: đang suy nghĩ
+  return `Running tools · turn ${inv.turns.length} ...`;        // đã chạy tool: đổi nhãn
 }
 
 export function InvestigationCard({

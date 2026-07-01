@@ -14,7 +14,8 @@ import { C } from './utils/theme';
 import { clipboardCopy } from './utils/format';
 import { incidentFullText } from './components/IncidentRow';
 
-const WS_URL = 'ws://localhost:8088/ws/incidents';
+// Cho bên nhận trỏ engine ở máy/cổng khác: đặt DUCKOMPOSE_WS. Mặc định = localhost:8088.
+const WS_URL = process.env.DUCKOMPOSE_WS ?? 'ws://localhost:8088/ws/incidents';
 
 export default function App() {
   const conversationId = useRef(`tui-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`).current;
