@@ -14,7 +14,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Builder
 public class AnomalyRule {
-    private String service;
+    private String serviceType;
     private String signal;
     private boolean greaterThan;
     private double threshold;

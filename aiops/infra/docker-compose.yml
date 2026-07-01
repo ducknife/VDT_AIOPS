@@ -62,6 +62,7 @@ services:
       dockerfile: Dockerfile
     container_name: aiops-node-api
     environment:
+      SERVICE_DOMAIN: users
       NODE_ENV:    production
       PORT:        3000
       # Tên host = tên service trong Compose (postgres, redis) — Docker tự resolve DNS
@@ -79,6 +80,151 @@ services:
       - aiops-sim-net
     restart: unless-stopped
 
+  # ═══════════════════════════════════════════════════════════════════════════
+  # NODE-API BỔ SUNG — làm giàu topology để thử tương quan theo đồ thị phụ thuộc.
+  #   • node-api-orders    → DÙNG CHUNG postgres + redis với node-api (shared blast radius)
+  #   • node-api-payments  → downstream RIÊNG: postgres-payments + redis-payments
+  #   • node-api-inventory → downstream RIÊNG: postgres-inventory + redis-inventory
+  # (Cạnh topology sinh từ nhãn depends_on — Compose tự gắn.)
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  # ─── node-api-orders: CHUNG downstream với node-api ──────────────────────────
+  node-api-orders:
+    build:
+      context: ./services/node-api
+      dockerfile: Dockerfile
+    container_name: aiops-node-api-orders
+    environment:
+      SERVICE_DOMAIN: orders
+      NODE_ENV:     production
+      PORT:         3000
+      DATABASE_URL: postgresql://appuser:${APP_DB_PASSWORD}@postgres:5432/appdb
+      REDIS_URL:    redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "3001:3000"
+    networks:
+      - aiops-sim-net
+    restart: unless-stopped
+
+  # ─── node-api-payments + downstream RIÊNG ────────────────────────────────────
+  postgres-payments:
+    image: postgres:15-alpine
+    container_name: aiops-postgres-payments
+    environment:
+      POSTGRES_DB:       paymentsdb
+      POSTGRES_USER:     appuser
+      POSTGRES_PASSWORD: ${APP_DB_PASSWORD}
+    volumes:
+      - postgres_payments_data:/var/lib/postgresql/data
+      - ./services/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U appuser -d paymentsdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - aiops-sim-net
+
+  redis-payments:
+    image: redis:7-alpine
+    container_name: aiops-redis-payments
+    command: >
+      redis-server
+      --maxmemory ${REDIS_MAX_MEMORY}
+      --maxmemory-policy allkeys-lru
+      --loglevel notice
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - aiops-sim-net
+
+  node-api-payments:
+    build:
+      context: ./services/node-api
+      dockerfile: Dockerfile
+    container_name: aiops-node-api-payments
+    environment:
+      SERVICE_DOMAIN: payments
+      NODE_ENV:     production
+      PORT:         3000
+      DATABASE_URL: postgresql://appuser:${APP_DB_PASSWORD}@postgres-payments:5432/paymentsdb
+      REDIS_URL:    redis://redis-payments:6379
+    depends_on:
+      postgres-payments:
+        condition: service_healthy
+      redis-payments:
+        condition: service_healthy
+    ports:
+      - "3002:3000"
+    networks:
+      - aiops-sim-net
+    restart: unless-stopped
+
+  # ─── node-api-inventory + downstream RIÊNG ───────────────────────────────────
+  postgres-inventory:
+    image: postgres:15-alpine
+    container_name: aiops-postgres-inventory
+    environment:
+      POSTGRES_DB:       inventorydb
+      POSTGRES_USER:     appuser
+      POSTGRES_PASSWORD: ${APP_DB_PASSWORD}
+    volumes:
+      - postgres_inventory_data:/var/lib/postgresql/data
+      - ./services/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U appuser -d inventorydb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - aiops-sim-net
+
+  redis-inventory:
+    image: redis:7-alpine
+    container_name: aiops-redis-inventory
+    command: >
+      redis-server
+      --maxmemory ${REDIS_MAX_MEMORY}
+      --maxmemory-policy allkeys-lru
+      --loglevel notice
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - aiops-sim-net
+
+  node-api-inventory:
+    build:
+      context: ./services/node-api
+      dockerfile: Dockerfile
+    container_name: aiops-node-api-inventory
+    environment:
+      SERVICE_DOMAIN: inventory
+      NODE_ENV:     production
+      PORT:         3000
+      DATABASE_URL: postgresql://appuser:${APP_DB_PASSWORD}@postgres-inventory:5432/inventorydb
+      REDIS_URL:    redis://redis-inventory:6379
+    depends_on:
+      postgres-inventory:
+        condition: service_healthy
+      redis-inventory:
+        condition: service_healthy
+    ports:
+      - "3003:3000"
+    networks:
+      - aiops-sim-net
+    restart: unless-stopped
+
   # ─── 4. nginx ────────────────────────────────────────────────────────────────
   # Reverse proxy: nhận request từ bên ngoài và forward vào node-api
   nginx:
@@ -91,6 +237,9 @@ services:
       - ./services/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - node-api
+      - node-api-orders
+      - node-api-payments
+      - node-api-inventory
     networks:
       - aiops-sim-net
     restart: unless-stopped
@@ -142,6 +291,59 @@ services:
       - aiops-sim-net
     restart: unless-stopped
 
+  # ═══════════════════════════════════════════════════════════════════════════
+  # EXPORTER cho datastore RIÊNG (payments / inventory).
+  # postgres/redis-exporter hardcode 1 target → mỗi datastore cần 1 exporter riêng.
+  # Không map host port (Prometheus gọi nội bộ); nhãn `service` đặt ở prometheus.yml.
+  # ═══════════════════════════════════════════════════════════════════════════
+  postgres-exporter-payments:
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    container_name: aiops-postgres-exporter-payments
+    environment:
+      DATA_SOURCE_NAME: postgresql://appuser:${APP_DB_PASSWORD}@postgres-payments:5432/paymentsdb?sslmode=disable
+    depends_on:
+      postgres-payments:
+        condition: service_healthy
+    networks:
+      - aiops-sim-net
+    restart: unless-stopped
+
+  redis-exporter-payments:
+    image: oliver006/redis_exporter:v1.62.0
+    container_name: aiops-redis-exporter-payments
+    environment:
+      REDIS_ADDR: redis://redis-payments:6379
+    depends_on:
+      redis-payments:
+        condition: service_healthy
+    networks:
+      - aiops-sim-net
+    restart: unless-stopped
+
+  postgres-exporter-inventory:
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    container_name: aiops-postgres-exporter-inventory
+    environment:
+      DATA_SOURCE_NAME: postgresql://appuser:${APP_DB_PASSWORD}@postgres-inventory:5432/inventorydb?sslmode=disable
+    depends_on:
+      postgres-inventory:
+        condition: service_healthy
+    networks:
+      - aiops-sim-net
+    restart: unless-stopped
+
+  redis-exporter-inventory:
+    image: oliver006/redis_exporter:v1.62.0
+    container_name: aiops-redis-exporter-inventory
+    environment:
+      REDIS_ADDR: redis://redis-inventory:6379
+    depends_on:
+      redis-inventory:
+        condition: service_healthy
+    networks:
+      - aiops-sim-net
+    restart: unless-stopped
+
   # ─── 8. traffic-gen ──────────────────────────────────────────────────────────
   # Sinh HTTP traffic liên tục vào nginx để tạo log thực tế cho AIOps phân tích.
   # Không có service này thì log của nginx/node-api gần như trống — không có gì để query.
@@ -152,6 +354,9 @@ services:
     container_name: aiops-traffic-gen
     depends_on:
       - nginx
+      - node-api-orders
+      - node-api-payments
+      - node-api-inventory
     networks:
       - aiops-sim-net
     restart: unless-stopped
@@ -161,6 +366,10 @@ services:
 # =============================================================================
 volumes:
   postgres_data:
+    driver: local
+  postgres_payments_data:
+    driver: local
+  postgres_inventory_data:
     driver: local
 
 # =============================================================================

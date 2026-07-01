@@ -8,6 +8,7 @@ import { StatusBar } from '../src/components/StatusBar.js';
 import type { State } from '../src/store/useFeed.js';
 
 const state: State = {
+  models: { current: 'claude', available: ['claude', 'minimax'] },
   live: [
     // thứ tự THỜI GIAN: cũ→mới (mới ở cuối = sát đáy)
     {

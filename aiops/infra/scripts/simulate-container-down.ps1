@@ -1,11 +1,17 @@
 # simulate-container-down.ps1
 # SIM: container bi stop dot ngot (crash / OOM-kill / process die) -> SERVICE_DOWN.
 # De container DOWN cho AIOps phat hien + dieu tra (KHONG tu hoi).
-# Recover: .\recover.ps1 container-down   (hoac: docker start aiops-<service>)
+# Recover: .\recover.ps1 container-down   (start lai moi container dang stop)
 #
-# Usage: .\simulate-container-down.ps1 [-Service nginx|node-api|postgres|redis]
+# Usage:
+#   .\simulate-container-down.ps1                          # mac dinh nginx
+#   .\simulate-container-down.ps1 -Service node-api-orders # 1 instance bat ky
+#   .\simulate-container-down.ps1 -Service postgres        # downstream CHUNG -> node-api + node-api-orders cung dinh
 param(
-    [ValidateSet("nginx", "node-api", "postgres", "redis")]
+    [ValidateSet("nginx",
+        "node-api", "node-api-orders", "node-api-payments", "node-api-inventory",
+        "postgres", "postgres-payments", "postgres-inventory",
+        "redis", "redis-payments", "redis-inventory")]
     [string]$Service = "nginx"
 )
 
@@ -37,10 +43,6 @@ Start-Sleep -Seconds 2
     }
     Start-Sleep -Seconds 1
 }
-
-Write-Host ""
-Write-Host "[context] node-api logs (lien quan):" -ForegroundColor Magenta
-docker logs aiops-node-api --tail 15 2>&1
 
 Write-Host ""
 Write-Host "[hold] $container DE NGUYEN DOWN cho AIOps detect + analyze." -ForegroundColor Red

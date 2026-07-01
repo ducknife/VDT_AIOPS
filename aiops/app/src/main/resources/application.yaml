@@ -42,12 +42,23 @@ spring.ai:
 server:
   port: ${SERVER_PORT:8088}   # 8088 vì host 8080 đã bị nginx (simulation) chiếm
 
-# ── Docker ────────────────────────────────────────────────────────────────
+# ── Docker ────────────────────────  ────────────────────────────────────────
 docker:
   host: ${DOCKER_HOST:tcp://localhost:2375}   # default = chạy LOCAL; container đè DOCKER_HOST=tcp://docker-proxy:2375
 
 # ── AIOps tuning ──────────────────────────────────────────────────────────
 aiops:
+  # llm: 
+    # active: claude 
+    # claude: 
+    #   api-key: ${ANTHROPIC_API_KEY:}
+    #   model: claude-sonnet-4-6
+    #   max-tokens: 8192
+    # minimax:
+    #   api-key: ${MINIMAX_API_KEY:}
+    #   base-url: https://api.minimax.io/anthropic
+    #   model: MiniMax-M3
+    #   max-tokens: 8192
   agent: 
     max-turns: 8
     max-attempts: 3
@@ -55,45 +66,45 @@ aiops:
   anomaly:
     rules:
       # ── redis ──
-      - service: redis
+      - service-type: redis
         signal: memUsedPercent      # có trong profile redis
         greater-than: true
         threshold: 90
         type: REDIS_OOM
-      - service: redis
+      - service-type: redis
         signal: isUp                # profile redis có isUp (redis_up)
         greater-than: false         # isUp < 1 (=0) → chết
         threshold: 1
         type: SERVICE_DOWN
       # ── postgres ──
-      - service: postgres
+      - service-type: postgres
         signal: isUp                # profile postgres có isUp (pg_up)
         greater-than: false
         threshold: 1
         type: SERVICE_DOWN
-      - service: postgres
+      - service-type: postgres
         signal: connUtilPercent     # % connection đã dùng / max_connections (robust khi max đổi)
         greater-than: true
         threshold: 80               # >80% slot connection → sắp cạn → DB_EXHAUSTION
         type: DB_EXHAUSTION
       # ── nginx ──
-      - service: nginx
+      - service-type: nginx
         signal: isUp                # profile nginx có isUp (nginx_up)
         greater-than: false
         threshold: 1
         type: SERVICE_DOWN
       # ── node-api ──
-      - service: node-api
+      - service-type: node-api
         signal: isUp                # profile node-api có isUp (up{job="node-api"})
         greater-than: false
         threshold: 1
         type: SERVICE_DOWN
-      - service: node-api
+      - service-type: node-api
         signal: latencyMs           # P99 latency (ms) từ histogram_quantile
         greater-than: true
         threshold: 2000             # P99 > 2000ms → 1% request chậm nhất vượt 2s
         type: HIGH_LATENCY
-      - service: node-api
+      - service-type: node-api
         signal: errorRate           # profile node-api có errorRate
         greater-than: true
         threshold: 1.0              # errorRate = lỗi/GIÂY (rate[1m]), KHÔNG phải %. Tune theo tải.

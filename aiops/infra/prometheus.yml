@@ -1,20 +1,32 @@
+# Prometheus scrape config — stack mô phỏng (aiops-sim).
+# Nhãn `service` = TÊN COMPOSE SERVICE: engine lọc metric theo từng instance qua nhãn này.
+# Riêng exporter: nhãn = tên DATASTORE nó đại diện (vd postgres-payments), không phải tên exporter.
 global:
   scrape_interval: 5s
 
 scrape_configs:
+  # node-api tự expose /metrics (prom-client) — mỗi instance 1 target
   - job_name: node-api
-    static_configs:
-      - targets: ['aiops-node-api:3000']
     metrics_path: /metrics
+    static_configs:
+      - { targets: ['aiops-node-api:3000'],           labels: { service: node-api } }
+      - { targets: ['aiops-node-api-orders:3000'],     labels: { service: node-api-orders } }
+      - { targets: ['aiops-node-api-payments:3000'],   labels: { service: node-api-payments } }
+      - { targets: ['aiops-node-api-inventory:3000'],  labels: { service: node-api-inventory } }
 
   - job_name: nginx
     static_configs:
-      - targets: ['aiops-nginx-exporter:9113']
+      - { targets: ['aiops-nginx-exporter:9113'], labels: { service: nginx } }
 
+  # 1 exporter / datastore — nhãn trỏ về tên datastore
   - job_name: postgres
     static_configs:
-      - targets: ['aiops-postgres-exporter:9187']
+      - { targets: ['aiops-postgres-exporter:9187'],           labels: { service: postgres } }
+      - { targets: ['aiops-postgres-exporter-payments:9187'],  labels: { service: postgres-payments } }
+      - { targets: ['aiops-postgres-exporter-inventory:9187'], labels: { service: postgres-inventory } }
 
   - job_name: redis
     static_configs:
-      - targets: ['aiops-redis-exporter:9121']
+      - { targets: ['aiops-redis-exporter:9121'],           labels: { service: redis } }
+      - { targets: ['aiops-redis-exporter-payments:9121'],  labels: { service: redis-payments } }
+      - { targets: ['aiops-redis-exporter-inventory:9121'], labels: { service: redis-inventory } }

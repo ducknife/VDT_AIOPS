@@ -28,11 +28,12 @@ public class IncidentSocketHandler extends TextWebSocketHandler {
     private final ObjectMapper objectMapper;
     private final TuiCommandService tuiCommandService;
     private final ChatService chatService;
-
+    
     // To check which is connecting
     private final Set<WebSocketSession> sessions = ConcurrentHashMap.newKeySet();
 
-    // conversationId -> session: chat only response to that TUI, not broadcast all TUI
+    // conversationId -> session: chat only response to that TUI, not broadcast all
+    // TUI
     private final Map<String, WebSocketSession> convSessions = new ConcurrentHashMap<>();
 
     // After TUI connect, register it + send the initial snapshot.
@@ -80,7 +81,8 @@ public class IncidentSocketHandler extends TextWebSocketHandler {
                 tuiCommandService.resolve(cmd.getIncidentId());
             } else if ("ask".equals(cmdRaw)) {
                 // remember which TUI ask
-                if (cmd.getConversationId() != null) convSessions.put(cmd.getConversationId(), session);
+                if (cmd.getConversationId() != null)
+                    convSessions.put(cmd.getConversationId(), session);
                 chatService.ask(cmd.getConversationId(), cmd.getText(), cmd.getIncidentId());
             } else {
                 // log.warn("Unknown command: {}", cmd.command());
@@ -90,10 +92,11 @@ public class IncidentSocketHandler extends TextWebSocketHandler {
         }
     }
 
-    // send to TUI has this conversationId 
+    // send to TUI has this conversationId
     public void sendTo(String conversationId, String json) {
         WebSocketSession session = convSessions.get(conversationId);
-        if (session == null) return; // TUI closed/didn't ask => return
+        if (session == null)
+            return; // TUI closed/didn't ask => return
         try {
             if (session.isOpen()) {
                 synchronized (session) {

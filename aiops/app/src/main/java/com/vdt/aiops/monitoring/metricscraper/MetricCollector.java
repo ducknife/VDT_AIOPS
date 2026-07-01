@@ -1,6 +1,7 @@
 package com.vdt.aiops.monitoring.metricscraper;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +14,7 @@ import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.Statistics;
 import com.vdt.aiops.utils.MonitoredServices;
 import com.vdt.aiops.utils.ServiceName;
+import com.vdt.aiops.utils.ServiceType;
 
 import lombok.RequiredArgsConstructor;
 
@@ -31,10 +33,17 @@ public class MetricCollector {
 
         /* Spec metrics */
         Map<String, Double> probes = new LinkedHashMap<>();
-        for (MetricProbe p : metricProfiles.forService(service)) {
-            probes.put(p.getLabel(), prometheusClient.query(p.getPromQL()));
-        }
+        String type = ServiceType.of(service); // node-api-orders => node-api
+        if (type != null) {
+            String sel = "service=\"" + service + "\"";
+            for (MetricProbe p : metricProfiles.forType(type)) {
+                String q = p.getPromQL();
+                int n = q.split("%s", -1).length - 1; // number of %s in promQL
+                Object[] args = Collections.nCopies(n, sel).toArray(); 
+                probes.put(p.getLabel(), prometheusClient.query(String.format(q, args))); // replate %s = sel
+            }
 
+        }
         Container container = monitoredServices.list().stream()
                 .filter(c -> service.equals(ServiceName.serviceName(c)))
                 .findFirst()
