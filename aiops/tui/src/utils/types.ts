@@ -26,6 +26,7 @@ export interface IncidentView {
   recommendedActions?: Action[];
   citedEvidence?: Evidence[];
   status?: IncidentStatus;
+  investigationMs?: number;   // thời gian điều tra (ms) — engine đã gửi sẵn
 }
 
 export interface SnapshotCard {

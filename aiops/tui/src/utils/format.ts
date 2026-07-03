@@ -11,8 +11,8 @@ export const clock = (ms: number): string => {
 // prompt không chặn được 100% nên lọc ở tầng render cho chắc. GIỮ LẠI các ký hiệu
 // văn bản hữu ích (✓ ✗ ◆ ▸ • → ↑ ↓, box-drawing) vì chúng KHÔNG phải Extended_Pictographic.
 const EMOJI = /[\p{Extended_Pictographic}\u{1F3FB}-\u{1F3FF}\u{FE0F}\u{20E3}\u{200D}]/gu;
-export const stripEmoji = (s: string): string =>
-  s.replace(EMOJI, '').replace(/ {2,}/g, ' ').replace(/[ \t]+$/gm, '');
+export const stripEmoji = (s: string | null | undefined): string =>
+  (s ?? '').replace(EMOJI, '').replace(/ {2,}/g, ' ').replace(/[ \t]+$/gm, '');
 
 // copy text ra clipboard hệ thống qua OSC 52 (đa số terminal hiện đại hỗ trợ)
 export const clipboardCopy = (text: string) =>

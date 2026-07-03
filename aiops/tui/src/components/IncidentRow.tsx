@@ -10,6 +10,9 @@ import { C, severityColor, statusColor } from '../utils/theme';
 import { stripEmoji } from '../utils/format';
 import type { ReactNode } from 'react';
 
+// ms -> chuỗi gọn: >=1s hiện "48.2s", nhỏ hơn hiện "820ms"
+const fmtDur = (ms: number) => (ms >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${ms}ms`);
+
 // DÒNG icon + meta (block click được)
 export function IncidentMeta({
   data, selected = false, expanded = false,
@@ -25,6 +28,9 @@ export function IncidentMeta({
       {data.id != null ? <Text color={C.muted}>  #{data.id}</Text> : null}
       <Text color={C.muted}>  · </Text>
       <Text color={statusColor(data.status ?? 'NEW')}>{data.status ?? 'NEW'}</Text>
+      {data.investigationMs != null ? (
+        <Text color={C.muted}>  · {fmtDur(data.investigationMs)}</Text>
+      ) : null}
     </Box>
   );
 }
