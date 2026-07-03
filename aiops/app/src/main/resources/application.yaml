@@ -48,18 +48,7 @@ docker:
 
 # ── AIOps tuning ──────────────────────────────────────────────────────────
 aiops:
-  # llm: 
-    # active: claude 
-    # claude: 
-    #   api-key: ${ANTHROPIC_API_KEY:}
-    #   model: claude-sonnet-4-6
-    #   max-tokens: 8192
-    # minimax:
-    #   api-key: ${MINIMAX_API_KEY:}
-    #   base-url: https://api.minimax.io/anthropic
-    #   model: MiniMax-M3
-    #   max-tokens: 8192
-  agent: 
+  agent:
     max-turns: 8
     max-attempts: 3
     max-concurrent: 2 

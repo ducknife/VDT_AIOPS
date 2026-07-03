@@ -17,7 +17,7 @@ public class MonitoredServices {
     private final String MONITORED_SYSTEM = "aiops-sim";
 
     public List<Container> list() {
-        return dockerClient.listContainersCmd().exec().stream()
+        return dockerClient.listContainersCmd().withShowAll(true).exec().stream()
                 .filter(c -> MONITORED_SYSTEM.equals(c.getLabels().get("com.docker.compose.project")))
                 .collect(Collectors.toList());
     }

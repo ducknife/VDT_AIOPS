@@ -90,8 +90,7 @@ public class Query {
         }
 
         String raw = response.getResult().getOutput().getText();
-        String json = JsonExtractor.extractArray(raw); // strip fence/preamble before parsing
-        return converter.convert(json);
+        return converter.convert(JsonExtractor.extractArray(raw)); // strip fence/preamble before parsing
     }
 
     @SneakyThrows

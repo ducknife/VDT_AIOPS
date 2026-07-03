@@ -1,76 +1,32 @@
 <mxfile host="app.diagrams.net">
   <diagram name="Hình 3.1 - Kiến trúc" id="arch-diagram">
-    <mxGraphModel dx="1030" dy="562" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1150" pageHeight="780" math="0" shadow="0">
+    <mxGraphModel dx="1212" dy="661" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1150" pageHeight="780" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="title" parent="1" style="text;html=1;align=center;fontSize=16;fontStyle=1;" value="Hình 3.1. Kiến trúc tổng thể hệ thống AIOps" vertex="1">
-          <mxGeometry height="30" width="450" x="350" y="20" as="geometry" />
-        </mxCell>
-        <mxCell id="engine" parent="1" style="rounded=1;whiteSpace=wrap;html=1;verticalAlign=top;align=center;fontStyle=1;fontSize=13;fillColor=#f5f5f5;strokeColor=#666666;dashed=1;spacingTop=6;" value="AIOps Engine (Spring Boot)" vertex="1">
-          <mxGeometry height="470" width="370" x="390" y="80" as="geometry" />
+        <mxCell id="engine" parent="1" style="rounded=1;whiteSpace=wrap;html=1;verticalAlign=top;align=center;fontStyle=1;fontSize=13;fillColor=#f5f5f5;strokeColor=#666666;dashed=1;spacingTop=6;" value="&lt;font face=&quot;Verdana&quot; style=&quot;font-size: 18px;&quot;&gt;AIOps&lt;/font&gt;" vertex="1">
+          <mxGeometry height="450" width="370" x="390" y="80" as="geometry" />
         </mxCell>
         <mxCell id="EbkBVy1AGABP7T4zHNfS-1" edge="1" parent="1" source="L1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="L2" value="">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="L1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="&lt;b&gt;Lớp Collection&lt;/b&gt;&lt;div&gt;Log Collector&amp;nbsp;&amp;nbsp;|&amp;nbsp;&amp;nbsp;Metric Collector&lt;/div&gt;" vertex="1">
+        <mxCell id="L1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="&lt;b&gt;&lt;font style=&quot;font-size: 16px;&quot; face=&quot;Verdana&quot;&gt;Lớp Collection&lt;/font&gt;&lt;/b&gt;&lt;div&gt;&lt;font face=&quot;Verdana&quot;&gt;Log Collector&amp;nbsp;&amp;nbsp;|&amp;nbsp;&amp;nbsp;Metric Collector&lt;/font&gt;&lt;/div&gt;" vertex="1">
           <mxGeometry height="70" width="330" x="410" y="120" as="geometry" />
         </mxCell>
         <mxCell id="EbkBVy1AGABP7T4zHNfS-2" edge="1" parent="1" source="L2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="L3" value="">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="L2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="&lt;b&gt;Lớp Detection &amp;amp; Correlation&lt;/b&gt;&lt;br&gt;Anomaly Detector&amp;nbsp;|&amp;nbsp;Alert Manager&lt;br&gt;Alert Correlator + Service Graph" vertex="1">
+        <mxCell id="L2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="&lt;font face=&quot;Verdana&quot;&gt;&lt;b&gt;&lt;font style=&quot;font-size: 16px;&quot;&gt;Lớp Detection &amp;amp; Correlation&lt;/font&gt;&lt;/b&gt;&lt;br&gt;Anomaly Detector&amp;nbsp;|&amp;nbsp;Alert Manager&lt;br&gt;Alert Correlator + Service Graph&lt;/font&gt;" vertex="1">
           <mxGeometry height="90" width="330" x="410" y="210" as="geometry" />
         </mxCell>
         <mxCell id="EbkBVy1AGABP7T4zHNfS-3" edge="1" parent="1" source="L3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="L4" value="">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="L3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" value="&lt;b&gt;Lớp Investigation&lt;/b&gt;&lt;div&gt;Context Builder&amp;nbsp;|&amp;nbsp;AI Agent + Diagnostic Tools&lt;/div&gt;" vertex="1">
+        <mxCell id="L3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" value="&lt;b&gt;&lt;font style=&quot;font-size: 16px;&quot; face=&quot;Verdana&quot;&gt;Lớp Investigation&lt;/font&gt;&lt;/b&gt;&lt;div&gt;&lt;font face=&quot;Verdana&quot;&gt;Context Builder&amp;nbsp;|&amp;nbsp;AI Agent + Diagnostic Tools&lt;/font&gt;&lt;/div&gt;" vertex="1">
           <mxGeometry height="80" width="330" x="410" y="320" as="geometry" />
         </mxCell>
-        <mxCell id="L4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" value="&lt;b&gt;Lớp Storage &amp;amp; Presentation&lt;/b&gt;&lt;div&gt;Repositories (JPA)&amp;nbsp;|&amp;nbsp;WebSocket Server&lt;/div&gt;" vertex="1">
+        <mxCell id="L4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" value="&lt;b&gt;&lt;font style=&quot;font-size: 16px;&quot; face=&quot;Verdana&quot;&gt;Lớp Storage &amp;amp; Presentation&lt;/font&gt;&lt;/b&gt;&lt;div&gt;&lt;font face=&quot;Verdana&quot;&gt;Repositories (JPA)&amp;nbsp;|&amp;nbsp;WebSocket Server&lt;/font&gt;&lt;/div&gt;" vertex="1">
           <mxGeometry height="80" width="330" x="410" y="420" as="geometry" />
-        </mxCell>
-        <mxCell id="docker" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="Docker Engine" vertex="1">
-          <mxGeometry height="60" width="180" x="80" y="120" as="geometry" />
-        </mxCell>
-        <mxCell id="prom" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="Prometheus + exporters" vertex="1">
-          <mxGeometry height="60" width="180" x="80" y="240" as="geometry" />
-        </mxCell>
-        <mxCell id="EbkBVy1AGABP7T4zHNfS-4" edge="1" parent="1" source="svc" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="prom" value="">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="EbkBVy1AGABP7T4zHNfS-5" connectable="0" parent="EbkBVy1AGABP7T4zHNfS-4" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="Theo dõi&lt;div&gt;&lt;br&gt;&lt;/div&gt;" vertex="1">
-          <mxGeometry relative="1" x="0.01" y="1" as="geometry">
-            <mxPoint x="1" y="10" as="offset" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="svc" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="Dịch vụ mô phỏng&lt;div&gt;(nginx, node-api, redis, postgres)&lt;/div&gt;" vertex="1">
-          <mxGeometry height="80" width="180" x="80" y="380" as="geometry" />
-        </mxCell>
-        <mxCell id="tui" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="TUI (React Ink)" vertex="1">
-          <mxGeometry height="60" width="170" x="490" y="610" as="geometry" />
-        </mxCell>
-        <mxCell id="pg" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="PostgreSQL" vertex="1">
-          <mxGeometry height="80" width="150" x="890" y="420" as="geometry" />
-        </mxCell>
-        <mxCell id="claude" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" value="Anthropic Claude API" vertex="1">
-          <mxGeometry height="60" width="170" x="880" y="330" as="geometry" />
-        </mxCell>
-        <mxCell id="a1" edge="1" parent="1" source="docker" style="endArrow=classic;html=1;fontSize=10;" target="L1" value="socat proxy&#xa;(logs / stats / inspect)">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="a2" edge="1" parent="1" source="prom" style="endArrow=classic;html=1;fontSize=10;" target="L1" value="PromQL">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="a4" edge="1" parent="1" source="L4" style="endArrow=classic;html=1;fontSize=10;" target="tui" value="WebSocket (event)">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="a5" edge="1" parent="1" source="L4" style="endArrow=classic;startArrow=classic;html=1;fontSize=10;" target="pg" value="JPA / Flyway">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="a6" edge="1" parent="1" source="L3" style="endArrow=classic;startArrow=classic;html=1;fontSize=10;" target="claude" value="gọi LLM (tool use)">
-          <mxGeometry relative="1" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
