@@ -19,6 +19,7 @@ public class MonitoredServices {
     public List<Container> list() {
         return dockerClient.listContainersCmd().withShowAll(true).exec().stream()
                 .filter(c -> MONITORED_SYSTEM.equals(c.getLabels().get("com.docker.compose.project")))
+                .filter(c -> ServiceType.of(ServiceName.serviceName(c)) != null)
                 .collect(Collectors.toList());
     }
 }

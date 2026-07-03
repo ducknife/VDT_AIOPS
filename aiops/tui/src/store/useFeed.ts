@@ -6,6 +6,7 @@
 
 import { useReducer, useCallback, useRef } from 'react';
 import type { Frame, IncidentView, ToolCall, AlertView, SnapshotCard } from '../utils/types';
+import { notify } from '../utils/notify';
 
 export interface Turn { tools: ToolCall[]; at: number } // at = thời điểm nhận (ms)
 
@@ -212,6 +213,13 @@ export function useFeed() {
       return;
     }
     flush(); // xả nốt buffer trước khi xử frame khác (turn/answer/incident…)
+    // 🔔 side-effect (đặt Ở ĐÂY, không trong reducer — reducer phải thuần): ding thông báo
+    if (frame.type === 'started') {
+      notify(); // vừa phát hiện lỗi -> 1 investigation live hiện lên
+    } else if (frame.type === 'snapshot') {
+      const cards = (frame.data as { cards?: SnapshotCard[] })?.cards ?? [];
+      if (cards.some((c) => (c.incidents?.length ?? 0) > 0)) notify(); // kết nối mà có snapshot
+    }
     dispatch({ type: 'frame', frame });
   }, [drainTick, flush]);
 

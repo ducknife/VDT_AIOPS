@@ -51,7 +51,7 @@ aiops:
   agent:
     max-turns: 8
     max-attempts: 3
-    max-concurrent: 2 
+    max-concurrent: 4 
   anomaly:
     rules:
       # ── redis ──

@@ -1,9 +1,14 @@
 package com.vdt.aiops.monitoring.detection;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
+import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -34,16 +39,34 @@ public class AnomalyDetector {
 
     @Scheduled(fixedDelayString = "${aiops.monitoring.poll-interval-ms}")
     public void scan() {
-        List<DetectedAnomaly> detectedAnomalies = new ArrayList<>();
-        Set<String> healthyKeys = new HashSet<>(); // service that is OK
+        Queue<DetectedAnomaly> detectedAnomalies = new ConcurrentLinkedQueue<>();
+        Set<String> healthyKeys = ConcurrentHashMap.newKeySet(); // service that is OK
         var rules = aiopsProperties.getAnomaly().getRules();
 
-        for (Container c : monitoredServices.list()) {
-            String service = ServiceName.serviceName(c);
-            String serviceType = ServiceType.of(service);
-            if (serviceType == null)
-                continue; // exporter / traffic load gen
+        // each service -> one thread
+        List<Container> containers = monitoredServices.list();
+        try (ExecutorService pool = Executors.newVirtualThreadPerTaskExecutor()) {
+            List<Callable<Void>> tasks = containers.stream()
+                    .map(c -> (Callable<Void>) () -> {
+                        scanOne(c, rules, detectedAnomalies, healthyKeys);
+                        return null;
+                    })
+                    .toList();
+            pool.invokeAll(tasks);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return;
+        }
+        // handle this detected turn
+        alertManager.handle(new ArrayList<>(detectedAnomalies), healthyKeys);
+    }
 
+    // for each service
+    private void scanOne(Container c, List<AnomalyRule> rules, Queue<DetectedAnomaly> detectedAnomalies,
+            Set<String> healthyKeys) {
+        String service = ServiceName.serviceName(c);
+        String serviceType = ServiceType.of(service);
+        try {
             MetricsOfService metricsOfService = metricCollector.collect(service);
             for (AnomalyRule rule : rules) {
                 if (rule.getServiceType().equals(serviceType)) {
@@ -64,8 +87,8 @@ public class AnomalyDetector {
                     }
                 }
             }
+        } catch (Exception e) {
+            log.warn("scanOne failed service={}: {}", service, e.getMessage());
         }
-        // handle this detected turn
-        alertManager.handle(detectedAnomalies, healthyKeys);
     }
 }
