@@ -1,0 +1,61 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Loi Agent + Plugin" id="agent-core">
+    <mxGraphModel dx="1030" dy="562" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1000" pageHeight="640" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="grpIn" parent="1" style="rounded=1;html=1;dashed=1;fillColor=none;strokeColor=#2E7D32;fontStyle=1;fontColor=#2E7D32;verticalAlign=top;fontSize=11;fontFamily=Verdana;" value="PLUGIN NẠP NGỮ CẢNH VÀO" vertex="1">
+          <mxGeometry height="500" width="250" x="30" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="grpOut" parent="1" style="rounded=1;html=1;dashed=1;fillColor=none;strokeColor=#E65100;fontStyle=1;fontColor=#E65100;verticalAlign=top;fontSize=11;fontFamily=Verdana;" value="PLUGIN ĐƯA KẾT LUẬN RA" vertex="1">
+          <mxGeometry height="410" width="250" x="720" y="120" as="geometry" />
+        </mxCell>
+        <mxCell id="agent" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0B2E6B;fontColor=#FFFFFF;strokeColor=#0B2E6B;fontSize=14;fontStyle=0;shadow=1;fontFamily=Verdana;" value="AI AGENT&lt;br&gt;&lt;b&gt;(Lõi — Brain)&lt;/b&gt;&lt;br&gt;&lt;br&gt;Điều tra &amp;amp; Chẩn đoán&lt;br&gt;&lt;i&gt;vòng lặp gọi công cụ&lt;/i&gt;" vertex="1">
+          <mxGeometry height="130" width="200" x="400" y="270" as="geometry" />
+        </mxCell>
+        <mxCell id="collector" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#2E7D32;fontSize=12;fontFamily=Verdana;" value="Thu thập&lt;br&gt;Log &amp;amp; Metric Collector" vertex="1">
+          <mxGeometry height="60" width="210" x="50" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="detector" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#2E7D32;fontSize=12;fontFamily=Verdana;" value="Phát hiện &amp;amp; Tương quan&lt;br&gt;Anomaly Detector · Correlator" vertex="1">
+          <mxGeometry height="60" width="210" x="50" y="220" as="geometry" />
+        </mxCell>
+        <mxCell id="ctx" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#2E7D32;fontSize=12;fontFamily=Verdana;" value="Dựng ngữ cảnh&lt;br&gt;Context Builder (±5 phút)" vertex="1">
+          <mxGeometry height="60" width="210" x="50" y="330" as="geometry" />
+        </mxCell>
+        <mxCell id="tools" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF8E1;strokeColor=#F9A825;fontSize=12;fontFamily=Verdana;" value="Bộ công cụ chẩn đoán&lt;br&gt;(read-only tools)" vertex="1">
+          <mxGeometry height="60" width="210" x="50" y="440" as="geometry" />
+        </mxCell>
+        <mxCell id="pg" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#E65100;fontSize=12;fontFamily=Verdana;" value="Lưu trữ&lt;br&gt;PostgreSQL (incident, feedback, chat)" vertex="1">
+          <mxGeometry height="60" width="210" x="740" y="160" as="geometry" />
+        </mxCell>
+        <mxCell id="tui" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#E65100;fontSize=12;fontFamily=Verdana;" value="Giao diện&lt;br&gt;TUI Duckompose (WebSocket)" vertex="1">
+          <mxGeometry height="60" width="210" x="740" y="270" as="geometry" />
+        </mxCell>
+        <mxCell id="alert" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#E65100;fontSize=12;fontFamily=Verdana;" value="Kênh cảnh báo&lt;br&gt;(TUI · tương lai: email/on-call)" vertex="1">
+          <mxGeometry height="60" width="210" x="740" y="380" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" edge="1" parent="1" source="collector" style="endArrow=block;html=1;strokeColor=#2E7D32;strokeWidth=2;fontFamily=Verdana;" target="agent">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="detector" style="endArrow=block;html=1;strokeColor=#2E7D32;strokeWidth=2;fontColor=#2E7D32;fontSize=10;fontFamily=Verdana;" target="agent" value="nạp ngữ cảnh">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" edge="1" parent="1" source="ctx" style="endArrow=block;html=1;strokeColor=#2E7D32;strokeWidth=2;fontFamily=Verdana;" target="agent">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" edge="1" parent="1" source="tools" style="endArrow=block;startArrow=block;html=1;strokeColor=#F9A825;strokeWidth=2;fontColor=#B26A00;fontSize=10;fontFamily=Verdana;" target="agent" value="gọi / trả kết quả">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" edge="1" parent="1" source="agent" style="endArrow=block;html=1;strokeColor=#E65100;strokeWidth=2;fontColor=#E65100;fontSize=10;fontFamily=Verdana;" target="pg" value="IncidentReport">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" edge="1" parent="1" source="agent" style="endArrow=block;html=1;strokeColor=#E65100;strokeWidth=2;fontColor=#E65100;fontSize=10;fontFamily=Verdana;" target="tui" value="chẩn đoán realtime">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" edge="1" parent="1" source="agent" style="endArrow=block;html=1;strokeColor=#E65100;strokeWidth=2;fontFamily=Verdana;" target="alert">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

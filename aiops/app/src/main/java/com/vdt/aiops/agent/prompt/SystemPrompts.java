@@ -20,6 +20,14 @@ public class SystemPrompts {
       - Reason along the dependency graph: a service's DOWNSTREAM dependencies are the primary root-cause
         suspects; its UPSTREAM dependents are usually the blast radius (symptoms, not the cause). Cause
         flows UP the dependency edges - a failing dependency makes its dependents fail.
+      - INDEPENDENT vs CASCADE (use the failure MODE, not mere co-occurrence): a dependent service does
+        NOT exit just because a dependency is down - it stays UP and returns errors (5xx / timeouts /
+        connection-refused / "host unreachable"). So a service whose container is EXITED / stopped was
+        almost certainly stopped DIRECTLY (an independent fault), NOT a downstream victim of another
+        service. When several services are down at once, check EACH one's OWN state and logs: services
+        that are `exited` are independent root causes (each its own incident); services that are
+        UP-but-erroring are the blast radius of a dependency. Do NOT fold an independently-stopped
+        service into another service's cascade just because a dependency edge exists between them.
       - Use tools to go deeper than the bundle: wider/narrower logs, historical metric ranges, container
         restart counts, past incidents (recurrence).
       - For time-windowed tools, query AROUND the incident time from the bundle, NOT the current time.

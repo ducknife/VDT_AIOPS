@@ -11,6 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vdt.aiops.agent.incident.Incident;
+import com.vdt.aiops.agent.incident.IncidentFeedback;
+import com.vdt.aiops.agent.incident.IncidentFeedbackRepository;
 import com.vdt.aiops.agent.incident.IncidentRepository;
 import com.vdt.aiops.agent.incident.enums.IncidentStatus;
 import com.vdt.aiops.monitoring.alertmanager.Alert;
@@ -26,6 +28,7 @@ public class SnapshotProvider {
 
         private final IncidentRepository incidentRepository;
         private final AlertRepository alertRepository;
+        private final IncidentFeedbackRepository feedbackRepository;
         private final ObjectMapper objectMapper;
 
         @SneakyThrows
@@ -33,6 +36,14 @@ public class SnapshotProvider {
         public String snapshotJson() {
                 List<Incident> recent = incidentRepository.findTop5ByStatusNotOrderByAnalyzedAtDesc(IncidentStatus.RESOLVED);
                 List<Long> allIncidentIds = recent.stream().map(Incident::getId).toList();
+
+                // get feedback if has
+                if (!allIncidentIds.isEmpty()) {
+                        Map<Long, String> verdictById = feedbackRepository.findAllById(allIncidentIds).stream()
+                                        .collect(Collectors.toMap(IncidentFeedback::getIncidentId,
+                                                        IncidentFeedback::getVerdict));
+                        recent.forEach(inc -> inc.setFeedback(verdictById.get(inc.getId())));
+                }
                 // avoid N + 1 Query when each card, get alert of its.
                 Map<Long, List<Alert>> alertsByIncidentId = allIncidentIds.isEmpty()
                                 ? Map.of()

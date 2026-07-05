@@ -5,13 +5,29 @@
 //    để Viewport render tiêu đề thành block CLICK-ĐỂ-COPY (copy riêng từng mục).
 //  - IncidentAction: nút a/r/e mỗi cái 1 dòng click.
 import { Box, Text } from 'ink';
-import type { IncidentView } from '../utils/types';
+import type { IncidentView, Verdict, MissCategory } from '../utils/types';
 import { C, severityColor, statusColor } from '../utils/theme';
 import { stripEmoji } from '../utils/format';
 import type { ReactNode } from 'react';
 
 // ms -> chuỗi gọn: >=1s hiện "48.2s", nhỏ hơn hiện "820ms"
 const fmtDur = (ms: number) => (ms >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${ms}ms`);
+
+// màu theo verdict feedback
+const fbColor = (v: string) => (v === 'correct' ? C.success : v === 'partial' ? C.warning : C.danger);
+
+// miss-taxonomy: nhãn hiển thị (English) + thứ tự (dùng cho phím [1..6] và click)
+export const MISS_ORDER: MissCategory[] = [
+  'wrong-root-cause', 'missed-service', 'wrong-severity', 'missed-split', 'wrong-remediation', 'other',
+];
+export const MISS_LABELS: Record<MissCategory, string> = {
+  'wrong-root-cause': 'wrong root cause',
+  'missed-service': 'missed a related service',
+  'wrong-severity': 'wrong severity',
+  'missed-split': 'failed to split incidents',
+  'wrong-remediation': 'wrong remediation',
+  'other': 'other',
+};
 
 // DÒNG icon + meta (block click được)
 export function IncidentMeta({
@@ -30,6 +46,9 @@ export function IncidentMeta({
       <Text color={statusColor(data.status ?? 'NEW')}>{data.status ?? 'NEW'}</Text>
       {data.investigationMs != null ? (
         <Text color={C.muted}>  · {fmtDur(data.investigationMs)}</Text>
+      ) : null}
+      {data.feedback ? (
+        <Text color={fbColor(data.feedback)} bold>  feedback: {data.feedback}</Text>
       ) : null}
     </Box>
   );
@@ -171,6 +190,75 @@ export function IncidentAction({ act, expanded = false }: { act: 'a' | 'r' | 'e'
   return (
     <Box marginLeft={2}>
       <Text color={b.color} bold>{b.key}</Text><Text color={C.muted}>{b.label}</Text>
+    </Box>
+  );
+}
+
+// nhãn câu hỏi của form feedback (vd "Is the RCA correct?")
+export function FeedbackQuestion({ text }: { text: string }) {
+  return (
+    <Box marginLeft={2} marginTop={1}>
+      <Text color={C.gold} bold>{text}</Text>
+    </Box>
+  );
+}
+
+// 1 nút VERDICT = 1 dòng click (phím 1/2/3). Chỉ chữ, KHÔNG ký tự mơ hồ.
+export function FeedbackAction({ verdict }: { verdict: Verdict }) {
+  const map = {
+    correct: { key: '[1]', label: ' correct', color: C.success },
+    partial: { key: '[2]', label: ' partial', color: C.warning },
+    wrong: { key: '[3]', label: ' wrong', color: C.danger },
+  } as const;
+  const b = map[verdict];
+  return (
+    <Box marginLeft={2}>
+      <Text color={b.color} bold>{b.key}</Text><Text color={C.muted}>{b.label}</Text>
+    </Box>
+  );
+}
+
+// 1 nút MISS-taxonomy = 1 dòng click (phím [index]) — hiện khi verdict != correct.
+export function MissAction({ cat, index }: { cat: MissCategory; index: number }) {
+  return (
+    <Box marginLeft={4}>
+      <Text color={C.lightPink} bold>{`[${index}]`}</Text>
+      <Text color={C.muted}>{` ${MISS_LABELS[cat]}`}</Text>
+    </Box>
+  );
+}
+
+// tóm tắt lựa chọn đã chọn (verdict + missed) trong lúc điền form
+export function FeedbackSummary({ verdict, missed }: { verdict: Verdict; missed?: MissCategory }) {
+  return (
+    <Box marginLeft={2} marginTop={1}>
+      <Text color={C.muted}>feedback: </Text>
+      <Text color={fbColor(verdict)} bold>{verdict}</Text>
+      {missed ? (
+        <Text color={C.muted}>{'  ·  missed: '}<Text color={C.lightPink} bold>{MISS_LABELS[missed]}</Text></Text>
+      ) : null}
+    </Box>
+  );
+}
+
+// ô nhập NOTE: "note: <đang gõ>" — xuống dòng khi dài hơn chiều rộng, có con trỏ.
+export function NoteField({ note }: { note: string }) {
+  return (
+    <Box marginLeft={2} marginTop={1} width="100%">
+      <Text wrap="wrap">
+        <Text color={C.sky} bold>note: </Text>
+        <Text color={C.white}>{note}</Text>
+        <Text color={C.muted}>▌</Text>
+      </Text>
+    </Box>
+  );
+}
+
+// gợi ý phím trong bước note
+export function FeedbackHint() {
+  return (
+    <Box marginLeft={2}>
+      <Text color={C.muted}>Enter to submit · Esc to cancel</Text>
     </Box>
   );
 }

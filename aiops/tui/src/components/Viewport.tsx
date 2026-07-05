@@ -6,16 +6,23 @@ import { Box, Text, measureElement } from 'ink';
 import type { State } from '../store/useFeed';
 import { InvestigationCard } from './InvestigationCard';
 import { ChatUser, ChatHead, ChatBody } from './ChatBubble';
-import { TurnDivider, TurnBody } from './TurnList';
-import { IncidentMeta, IncidentBody, IncidentAction, incidentSections, SectionHeader, incidentFullText } from './IncidentRow';
+import { ToolsHeader, TurnDivider, TurnBody } from './TurnList';
+import { IncidentMeta, IncidentBody, IncidentAction, FeedbackAction, MissAction, MISS_ORDER, FeedbackQuestion, FeedbackSummary, NoteField, FeedbackHint, incidentSections, SectionHeader, incidentFullText } from './IncidentRow';
+import { ConvListHeader, ConvRow, ConvOpenedHeader, ConvMsg, ConvCollapse } from './ConversationList';
 import { Scrollbar } from './Scrollbar';
 import { C } from '../utils/theme';
+import type { Verdict, MissCategory, FeedbackDraft } from '../utils/types';
 import { useTerminalSize } from '../hooks/useTerminalSize';
 
 export type Hit =
   | { type: 'inc'; id: number }
   | { type: 'turntoggle'; id: string }
+  | { type: 'toolstoggle'; id: string }
   | { type: 'act'; id: number; action: 'a' | 'r' | 'e' }
+  | { type: 'fb'; id: number; verdict: Verdict }
+  | { type: 'miss'; id: number; cat: MissCategory }
+  | { type: 'convopen'; id: string }
+  | { type: 'convclose'; id: string }
   | { type: 'copy'; text: string; label: string };
 type BlockMeta = Hit | { type: 'spacer' };
 
@@ -31,6 +38,8 @@ interface Props {
   selectedId: number | null;
   expandedIds: Set<number>;
   expandedTurns: Set<string>;
+  expandedTools: Set<string>;
+  feedbackDraft: FeedbackDraft | null; // form feedback đang điền cho incident nào (verdict/miss/note)
 }
 
 function BridgeBar({ w }: { w: number }) {
@@ -49,7 +58,7 @@ function BridgeBar({ w }: { w: number }) {
 }
 
 export const Viewport = forwardRef<ViewportHandle, Props>(function Viewport(
-  { state, selectedId, expandedIds, expandedTurns }, ref,
+  { state, selectedId, expandedIds, expandedTurns, expandedTools, feedbackDraft }, ref,
 ) {
   const { cols } = useTerminalSize();
   const w = Math.max(1, cols - 1);
@@ -84,24 +93,52 @@ export const Viewport = forwardRef<ViewportHandle, Props>(function Viewport(
           <Box key={`${key}-sc${si}`} marginLeft={4}>{s.content}</Box>);
       });
     }
-    // được chọn & chưa resolved -> mỗi nút a/r/e là 1 dòng click được
-    if (sel && inc.id != null && inc.status !== 'RESOLVED') {
-      (['a', 'r', 'e'] as const).forEach((a) =>
-        push({ type: 'act', id: inc.id, action: a }, <IncidentAction key={`${key}-${a}`} act={a} expanded={exp} />));
+    // được chọn -> hành động + form feedback nhiều bước
+    if (sel && inc.id != null) {
+      // a/r/e chỉ khi chưa resolved
+      if (inc.status !== 'RESOLVED') {
+        (['a', 'r', 'e'] as const).forEach((a) =>
+          push({ type: 'act', id: inc.id, action: a }, <IncidentAction key={`${key}-${a}`} act={a} expanded={exp} />));
+      }
+      const draft = feedbackDraft && feedbackDraft.incidentId === inc.id ? feedbackDraft : null;
+      if (!draft || draft.stage === 'verdict') {
+        // bước 1: câu hỏi + 3 verdict (phím 1/2/3 hoặc click)
+        push({ type: 'spacer' }, <FeedbackQuestion key={`${key}-fq`} text="Is the RCA correct? Rate the diagnosis:" />);
+        (['correct', 'partial', 'wrong'] as const).forEach((v) =>
+          push({ type: 'fb', id: inc.id, verdict: v }, <FeedbackAction key={`${key}-fb-${v}`} verdict={v} />));
+      } else if (draft.stage === 'miss' && draft.verdict) {
+        // bước 2 (verdict != correct): thiếu/sai cái gì (phím 1..6 hoặc click)
+        push({ type: 'spacer' }, <FeedbackSummary key={`${key}-fs`} verdict={draft.verdict} />);
+        push({ type: 'spacer' }, <FeedbackQuestion key={`${key}-mq`} text="What did it get wrong / miss?" />);
+        MISS_ORDER.forEach((cat, i) =>
+          push({ type: 'miss', id: inc.id, cat }, <MissAction key={`${key}-miss-${cat}`} cat={cat} index={i + 1} />));
+      } else if (draft.stage === 'note' && draft.verdict) {
+        // bước 3: ô nhập note (Enter gửi, Esc huỷ)
+        push({ type: 'spacer' }, <FeedbackSummary key={`${key}-fs`} verdict={draft.verdict} missed={draft.missed} />);
+        push({ type: 'spacer' }, <NoteField key={`${key}-nf`} note={draft.note} />);
+        push({ type: 'spacer' }, <FeedbackHint key={`${key}-fh`} />);
+      }
     }
   };
 
-  // accordion theo TỪNG turn: mặc định chỉ turn cuối MỞ khi đang chạy (live);
-  // turn mới tới -> turn cũ tự thu; xong (live=false) -> thu hết. Click divider để lật.
+  // 2 cấp accordion:
+  //  CHA "tool calls" -> mặc định MỞ khi đang chạy (xem tiến trình), THU khi xong (gọn). Click để lật.
+  //  CON từng turn -> chỉ turn cuối MỞ khi live; turn mới tới -> turn cũ tự thu. Click divider để lật.
   const pushTurns = (id: string, turns: any[], live: boolean) => {
     if (!turns || turns.length === 0) return;
+    const toolsDefOpen = live;
+    const toolsOpen = expandedTools.has(id) ? !toolsDefOpen : toolsDefOpen;
+    push({ type: 'toolstoggle', id }, <ToolsHeader count={turns.length} open={toolsOpen} live={live} />);
+    if (!toolsOpen) return;
     turns.forEach((turn, i) => {
       const active = live && i === turns.length - 1;
       const key = `${id}:${i}`;
       const defOpen = active;
       const open = expandedTurns.has(key) ? !defOpen : defOpen;
-      push({ type: 'turntoggle', id: key }, <TurnDivider index={i} active={active} open={open} />);
-      if (open) push({ type: 'spacer' }, <TurnBody turn={turn} />);
+      push({ type: 'turntoggle', id: key },
+        <Box marginLeft={2}><TurnDivider index={i} active={active} open={open} /></Box>);
+      if (open) push({ type: 'spacer' },
+        <Box marginLeft={2}><TurnBody turn={turn} /></Box>);
     });
   };
 
@@ -118,6 +155,19 @@ export const Viewport = forwardRef<ViewportHandle, Props>(function Viewport(
       push({ type: 'spacer' }, <InvestigationCard inv={it} width={w} />);
       pushTurns(it.id, it.turns, it.status === 'analyzing');
       it.incidents.forEach((inc, i) => pushIncident(inc, `${it.id}-inc-${inc.id ?? i}`));
+    } else if (it.kind === 'convlist') {
+      // danh sách hội thoại: header + mỗi dòng TOGGLE; hội thoại đã mở nằm dưới theo THỨ TỰ CLICK
+      push({ type: 'spacer' }, <ConvListHeader key={`${it.id}-h`} count={it.items.length} width={w} />);
+      it.items.forEach((c, i) => {
+        const open = it.opened.some((o) => o.conversationId === c.conversationId);
+        push({ type: 'convopen', id: c.conversationId }, <ConvRow key={`${it.id}-${i}`} data={c} open={open} />);
+      });
+      it.opened.forEach((o, oi) => {
+        push({ type: 'spacer' }, <ConvOpenedHeader key={`${it.id}-oh${oi}`} preview={o.preview} width={w} />);
+        o.messages.forEach((m, mi) =>
+          push({ type: 'spacer' }, <ConvMsg key={`${it.id}-o${oi}-m${mi}`} role={m.role} text={m.text} />));
+        push({ type: 'convclose', id: o.conversationId }, <ConvCollapse key={`${it.id}-oc${oi}`} />);
+      });
     } else if (it.role === 'user') {
       push({ type: 'spacer' }, <ChatUser item={it} width={w} />);
     } else {

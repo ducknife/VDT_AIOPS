@@ -7,8 +7,11 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.vdt.aiops.agent.event.IncidentFeedbackEvent;
 import com.vdt.aiops.agent.event.StatusChangedEvent;
 import com.vdt.aiops.agent.incident.Incident;
+import com.vdt.aiops.agent.incident.IncidentFeedback;
+import com.vdt.aiops.agent.incident.IncidentFeedbackRepository;
 import com.vdt.aiops.agent.incident.IncidentRepository;
 import com.vdt.aiops.agent.incident.enums.IncidentStatus;
 import com.vdt.aiops.monitoring.alertmanager.Alert;
@@ -25,6 +28,7 @@ public class TuiCommandService {
 
     private final IncidentRepository incidentRepository;
     private final AlertRepository alertRepository;
+    private final IncidentFeedbackRepository feedbackRepository;
     private final ApplicationEventPublisher eventPublisher;
 
     public void ack(Long incidentId) {
@@ -50,5 +54,22 @@ public class TuiCommandService {
         eventPublisher.publishEvent(
             new StatusChangedEvent(incidentId, incident.getStatus())
         );
+    }
+
+    /*
+     * Human feedback on a diagnosis. 1:1 with the incident: save() upserts on the PK
+     * (one feedback per incident). STORE-ONLY — not fed back to the agent.
+     */
+    public void feedback(Long incidentId, String verdict, String missed, String note) {
+        if (incidentId == null || verdict == null)
+            return;
+        feedbackRepository.save(IncidentFeedback.builder()
+                .incidentId(incidentId)
+                .verdict(verdict)
+                .missed(missed) // miss-taxonomy (null when verdict == correct)
+                .note(note)
+                .createdAt(Instant.now())
+                .build());
+        eventPublisher.publishEvent(new IncidentFeedbackEvent(incidentId, verdict));
     }
 }

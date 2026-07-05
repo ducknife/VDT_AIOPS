@@ -19,7 +19,7 @@ const state: State = {
         { tools: [{ name: 'inspectContainer', arguments: { name: 'nginx' } }], at: Date.now() },
       ],
       incidents: [
-        { id: 12, service: 'nginx', title: 'nginx 5xx surge', severity: 'P1', rootCause: 'upstream api timeout', status: 'NEW' },
+        { id: 12, service: 'nginx', title: 'nginx 5xx surge', severity: 'P1', rootCause: 'upstream api timeout', status: 'NEW', feedback: 'wrong' },
         { id: 13, service: 'api', title: 'api p99 latency', severity: 'P3', rootCause: 'db pool exhausted', status: 'ACKNOWLEDGED' },
       ],
     },
@@ -29,6 +29,18 @@ const state: State = {
       status: 'analyzing',
       turns: [{ tools: [{ name: 'queryMetrics', arguments: { query: 'redis_memory_used_bytes' } }], at: Date.now() }],
       incidents: [],
+    },
+    { kind: 'convlist', id: 'cl0',
+      items: [
+        { conversationId: 'tui-1', messageCount: 6, preview: 'why is nginx slow right now?' },
+        { conversationId: 'tui-2', messageCount: 2, preview: 'is redis-payments healthy?' },
+      ],
+      opened: [
+        { conversationId: 'tui-1', preview: 'why is nginx slow right now?', messages: [
+          { role: 'user', text: 'why is nginx slow right now?' },
+          { role: 'assistant', text: 'nginx upstream (node-api) is timing out → 502s.' },
+        ] },
+      ],
     },
     { kind: 'chat', id: 'c0', role: 'user', text: 'why nginx slow?', turns: [] },
     {
@@ -45,7 +57,7 @@ const state: State = {
 const { unmount } = render(
   <Box flexDirection="column" height={process.stdout.rows}>
     <Header />
-    <Viewport state={state} selectedId={13} expandedIds={new Set([13])} expandedTurns={new Set()} />
+    <Viewport state={state} selectedId={13} expandedIds={new Set([13])} expandedTurns={new Set()} expandedTools={new Set()} feedbackDraft={{ incidentId: 13, stage: 'note', verdict: 'wrong', missed: 'wrong-root-cause', note: 'should be redis OOM, not db pool' }} />
     <StatusBar status="connected" count={state.live.length + state.snapshot.length} mode="list" />
   </Box>,
 );

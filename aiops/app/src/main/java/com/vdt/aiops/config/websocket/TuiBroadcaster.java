@@ -9,6 +9,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vdt.aiops.agent.event.IncidentDiagnosedEvent;
+import com.vdt.aiops.agent.event.IncidentFeedbackEvent;
 import com.vdt.aiops.agent.event.InvestigationFailedEvent;
 import com.vdt.aiops.agent.event.StatusChangedEvent;
 import com.vdt.aiops.agent.event.interact.ChatAnswerEvent;
@@ -56,6 +57,14 @@ public class TuiBroadcaster {
         send("status", Map.of(
                 "incidentId", e.getIncidentId(),
                 "newStatus", e.getStatus()));
+    }
+
+    // human feedback saved -> broadcast so every TUI shows the verdict badge
+    @EventListener
+    public void onFeedback(IncidentFeedbackEvent e) {
+        send("feedback", Map.of(
+                "incidentId", e.getIncidentId(),
+                "verdict", e.getVerdict()));
     }
 
     // CHAT events -> only response exactly TUI ask, not broadcast

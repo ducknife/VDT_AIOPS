@@ -1,0 +1,55 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Agentic OS - Huong phat trien" id="agentic-os">
+    <mxGraphModel dx="1084" dy="592" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1120" pageHeight="620" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="lblIn" parent="1" style="text;html=1;fontStyle=1;fontSize=11;align=center;fontColor=#2E7D32;fontFamily=Verdana;" value="THU THẬP &amp;amp; NẠP NGỮ CẢNH" vertex="1">
+          <mxGeometry height="20" width="250" x="30" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="collect" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#2E7D32;fontSize=12;fontFamily=Verdana;" value="Thu thập log / metric&lt;br&gt;&lt;b&gt;Prometheus · Grafana&lt;/b&gt;&lt;br&gt;&lt;b&gt;ELK / OpenSearch&lt;/b&gt;" vertex="1">
+          <mxGeometry height="90" width="250" x="30" y="150" as="geometry" />
+        </mxCell>
+        <mxCell id="mcpctx" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#6A1B9A;fontSize=12;fontFamily=Verdana;" value="Nạp ngữ cảnh qua &lt;b&gt;MCP&lt;/b&gt;&lt;br&gt;Docker MCP · Postgres MCP&lt;br&gt;AWS MCP …" vertex="1">
+          <mxGeometry height="90" width="250" x="30" y="330" as="geometry" />
+        </mxCell>
+        <mxCell id="perm" parent="1" style="rounded=1;html=1;dashed=1;fillColor=#FFEBEE;strokeColor=#C62828;fontStyle=1;fontColor=#C62828;verticalAlign=top;fontSize=12;fontFamily=Verdana;" value="&lt;font style=&quot;font-size: 11px;&quot;&gt;LỚP PHÂN QUYỀN &amp;amp; BẢO MẬT (Permission &amp;amp; Security)&lt;br&gt;&lt;i style=&quot;&quot;&gt;cấp quyền · kiểm toán · thu hồi&lt;/i&gt;&lt;/font&gt;" vertex="1">
+          <mxGeometry height="450" width="410" x="355" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="multi" parent="1" style="text;html=1;align=center;fontStyle=2;fontSize=11;fontColor=#0B2E6B;fontFamily=Verdana;" value="Đa agent phối hợp (Multi-agent)" vertex="1">
+          <mxGeometry height="20" width="310" x="410" y="140" as="geometry" />
+        </mxCell>
+        <mxCell id="a1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0B2E6B;fontColor=#FFFFFF;strokeColor=#0B2E6B;fontSize=13;fontFamily=Verdana;" value="Agent điều tra&lt;br&gt;&lt;i&gt;(đã có)&lt;/i&gt;" vertex="1">
+          <mxGeometry height="60" width="250" x="440" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="a2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1565C0;fontColor=#FFFFFF;strokeColor=#0B2E6B;fontSize=13;fontFamily=Verdana;" value="Agent khắc phục&lt;br&gt;&lt;i&gt;(tương lai)&lt;/i&gt;" vertex="1">
+          <mxGeometry height="60" width="250" x="440" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="a3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1565C0;fontColor=#FFFFFF;strokeColor=#0B2E6B;fontSize=13;fontFamily=Verdana;" value="Agent giám sát&lt;br&gt;&lt;i&gt;(tương lai)&lt;/i&gt;" vertex="1">
+          <mxGeometry height="60" width="250" x="440" y="380" as="geometry" />
+        </mxCell>
+        <mxCell id="lblOut" parent="1" style="text;html=1;fontStyle=1;fontSize=11;align=center;fontColor=#E65100;fontFamily=Verdana;" value="THỰC THI &amp;amp; THÔNG BÁO" vertex="1">
+          <mxGeometry height="20" width="250" x="840" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="remed" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#E65100;fontSize=12;fontFamily=Verdana;" value="Thực thi khắc phục qua &lt;b&gt;MCP&lt;/b&gt;&lt;br&gt;restart · scale · rotate key …" vertex="1">
+          <mxGeometry height="90" width="250" x="840" y="150" as="geometry" />
+        </mxCell>
+        <mxCell id="chan" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#E65100;fontSize=12;fontFamily=Verdana;" value="Đa kênh cảnh báo&lt;br&gt;email · on-call&lt;br&gt;Slack · WhatsApp" vertex="1">
+          <mxGeometry height="90" width="250" x="840" y="330" as="geometry" />
+        </mxCell>
+        <mxCell id="f1" edge="1" parent="1" source="collect" style="endArrow=block;html=1;strokeColor=#2E7D32;strokeWidth=2;fontFamily=Verdana;" target="a1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f2" edge="1" parent="1" source="mcpctx" style="endArrow=block;html=1;strokeColor=#6A1B9A;strokeWidth=2;fontColor=#6A1B9A;fontSize=10;fontFamily=Verdana;" target="a1" value="context">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f3" edge="1" parent="1" source="a2" style="endArrow=block;html=1;strokeColor=#E65100;strokeWidth=2;fontColor=#E65100;fontSize=10;fontFamily=Verdana;" target="remed" value="hành động">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f4" edge="1" parent="1" source="a3" style="endArrow=block;html=1;strokeColor=#E65100;strokeWidth=2;fontColor=#E65100;fontSize=10;fontFamily=Verdana;" target="chan" value="cảnh báo">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

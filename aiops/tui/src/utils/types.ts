@@ -27,12 +27,36 @@ export interface IncidentView {
   citedEvidence?: Evidence[];
   status?: IncidentStatus;
   investigationMs?: number;   // thời gian điều tra (ms) — engine đã gửi sẵn
+  feedback?: string;          // verdict người dùng: correct | partial | wrong (chỉ lưu, không nuôi agent)
 }
 
 export interface SnapshotCard {
   investigationId: string;
   incidents: IncidentView[];
   alerts: AlertView[];
+}
+
+// 1 dòng trong /conversation-history (khớp backend ConversationSummary).
+export interface ConversationSummary {
+  conversationId: string;
+  messageCount: number;
+  preview?: string;
+  lastAt?: string;
+}
+
+export type Verdict = 'correct' | 'partial' | 'wrong';
+// miss-taxonomy: chẩn đoán thiếu/sai cái gì (khi verdict != correct)
+export type MissCategory =
+  | 'wrong-root-cause' | 'missed-service' | 'wrong-severity'
+  | 'missed-split' | 'wrong-remediation' | 'other';
+
+// form feedback nhiều bước: verdict -> (miss nếu != correct) -> note -> submit
+export interface FeedbackDraft {
+  incidentId: number;
+  stage: 'verdict' | 'miss' | 'note';
+  verdict?: Verdict;
+  missed?: MissCategory;
+  note: string;
 }
 
 // Envelope chung mọi frame server -> TUI.
@@ -44,8 +68,10 @@ export interface Frame {
 
 // Lệnh TUI -> server.
 export interface Command {
-  command: 'ack' | 'resolve' | 'ask';
+  command: 'ack' | 'resolve' | 'ask' | 'feedback' | 'conversation-history' | 'get-conversation';
   incidentId?: number;
   text?: string;
   conversationId?: string;
+  verdict?: string;   // feedback: correct | partial | wrong
+  missed?: string;    // feedback: miss-taxonomy khi verdict != correct
 }

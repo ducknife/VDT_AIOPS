@@ -30,12 +30,22 @@ spring:
     locations: classpath:db/migration
 
 # ── Spring AI: Claude (Anthropic) ─────────────────────────────────────────
-spring.ai:
-  anthropic:
-    api-key: ${ANTHROPIC_API_KEY:}
-    chat:
-      options:
-        model: claude-sonnet-4-6
+# spring.ai:
+#   anthropic:
+#     api-key: ${ANTHROPIC_API_KEY:}
+#     chat:
+#       options:
+#         model: claude-sonnet-4-6
+#         max-tokens: 8192
+
+# ── Spring AI: MiniMax ─────────────────────────────────────────
+spring.ai: 
+  anthropic: 
+    base-url: https://api.minimax.io/anthropic
+    api-key: ${MINIMAX_API_KEY}
+    chat: 
+      options: 
+        model: MiniMax-M3
         max-tokens: 8192
 
 # ── Web server (Tomcat) — cổng engine phục vụ WebSocket/REST cho React Ink TUI ──

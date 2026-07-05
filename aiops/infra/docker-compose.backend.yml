@@ -70,7 +70,9 @@ services:
       # ── Prometheus: tên service, không phải localhost ──
       PROMETHEUS_URL: http://prometheus:9090
       # ── Claude: application.yaml KHÔNG có default → bắt buộc phải có ──
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}   # secret ← .env
+      # ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}   # secret ← .env
+      # ── MiniMax: application.yaml KHÔNG có default → bắt buộc phải có ──
+      MINIMAX_API_KEY: ${MINIMAX_API_KEY}
       SERVER_PORT: "8088"
     ports:
       - "127.0.0.1:8088:8088"

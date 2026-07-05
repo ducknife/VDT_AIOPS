@@ -17,4 +17,6 @@ public class TuiCommand {
     private Long incidentId;
     private String text;
     private String conversationId;
+    private String verdict; // for "feedback": correct | partial | wrong
+    private String missed;  // for "feedback": miss-taxonomy when verdict != correct
 }

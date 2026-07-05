@@ -5,7 +5,7 @@
 // Group biến mất khi MỌI incident của nó resolved. Snapshot incident resolved -> tự rớt.
 
 import { useReducer, useCallback, useRef } from 'react';
-import type { Frame, IncidentView, ToolCall, AlertView, SnapshotCard } from '../utils/types';
+import type { Frame, IncidentView, ToolCall, AlertView, SnapshotCard, ConversationSummary } from '../utils/types';
 import { notify } from '../utils/notify';
 
 export interface Turn { tools: ToolCall[]; at: number } // at = thời điểm nhận (ms)
@@ -29,14 +29,30 @@ export interface ChatItem {
   streaming?: boolean;
   turns: Turn[];
 }
-export type FeedItem = Investigation | ChatItem;
+// 1 hội thoại đã MỞ (replay) — giữ theo THỨ TỰ CLICK (click trước ở trước).
+export interface OpenedConv {
+  conversationId: string;
+  preview?: string;
+  messages: { role: string; text: string }[];
+}
+// Danh sách hội thoại (từ /conversation-history) — mỗi dòng TOGGLE mở/thu; mở nằm dưới, theo thứ tự click.
+export interface ConvList {
+  kind: 'convlist';
+  id: string;
+  items: ConversationSummary[];
+  opened: OpenedConv[];
+}
+export type FeedItem = Investigation | ChatItem | ConvList;
 
 export interface State {
   live: FeedItem[];
   snapshot: IncidentView[];
 }
 
-type Action = { type: 'frame'; frame: Frame } | { type: 'user'; text: string };
+type Action =
+  | { type: 'frame'; frame: Frame }
+  | { type: 'user'; text: string }
+  | { type: 'close-conv'; conversationId: string };
 
 let _seq = 0;
 const uid = () => `f${++_seq}`;
@@ -68,6 +84,17 @@ function reducer(state: State, action: Action): State {
     // ngay trước token đầu tiên; chunk/turn/answer sau đó sẽ rót vào chính nó.
     const pending: ChatItem = { kind: 'chat', id: uid(), role: 'assistant', text: '', streaming: true, turns: [] };
     return { ...state, live: [...state.live, item, pending] };
+  }
+
+  if (action.type === 'close-conv') {
+    // thu gọn 1 hội thoại đã mở (bỏ khỏi opened của mọi convlist)
+    return {
+      ...state,
+      live: state.live.map((it) =>
+        it.kind === 'convlist'
+          ? { ...it, opened: it.opened.filter((o) => o.conversationId !== action.conversationId) }
+          : it),
+    };
   }
 
   const { type, investigationId: invId, data } = action.frame;
@@ -150,6 +177,45 @@ function reducer(state: State, action: Action): State {
       return withStreamingAssistant(state, (a) => ({ ...a, text: d.text ?? a.text, streaming: false }));
     }
 
+    case 'feedback': {
+      // gắn verdict lên incident tương ứng (snapshot + trong investigation) -> hiện badge
+      const d = data as { incidentId?: number; verdict?: string };
+      if (d.incidentId == null) return state;
+      const patch = (inc: IncidentView) => (inc.id === d.incidentId ? { ...inc, feedback: d.verdict } : inc);
+      return {
+        ...state,
+        snapshot: state.snapshot.map(patch),
+        live: state.live.map((i) => (isInv(i) ? { ...i, incidents: i.incidents.map(patch) } : i)),
+      };
+    }
+
+    case 'conversations': {
+      // /conversation-history -> đẩy 1 block danh sách hội thoại (mỗi dòng toggle) xuống cuối feed
+      const items = (data as ConversationSummary[]) ?? [];
+      const cl: ConvList = { kind: 'convlist', id: uid(), items, opened: [] };
+      return { ...state, live: [...state.live, cl] };
+    }
+
+    case 'conversation': {
+      // MỞ 1 hội thoại -> thêm vào opened của convlist tương ứng (dedupe; append = THỨ TỰ CLICK)
+      const d = data as { conversationId?: string; messages?: { role?: string; text?: string }[] };
+      const cid = d.conversationId;
+      if (!cid) return state;
+      const messages = (d.messages ?? []).map((m) => ({
+        role: m.role === 'assistant' ? 'assistant' : 'user', text: m.text ?? '',
+      }));
+      const live = [...state.live];
+      for (let i = live.length - 1; i >= 0; i--) {
+        const it = live[i];
+        if (it.kind !== 'convlist' || !it.items.some((c) => c.conversationId === cid)) continue;
+        if (it.opened.some((o) => o.conversationId === cid)) break; // đã mở rồi -> bỏ qua
+        const preview = it.items.find((c) => c.conversationId === cid)?.preview;
+        live[i] = { ...it, opened: [...it.opened, { conversationId: cid, preview, messages }] };
+        return { ...state, live };
+      }
+      return state;
+    }
+
     default:
       return state;
   }
@@ -163,6 +229,12 @@ export function selectableIds(state: State): number[] {
     if (it.kind === 'investigation') it.incidents.forEach((inc) => inc.id != null && out.push(inc.id));
   });
   return out;
+}
+
+// hội thoại này đang mở (đã có trong opened của convlist nào đó) chưa?
+export function isConversationOpen(state: State, conversationId: string): boolean {
+  return state.live.some(
+    (it) => it.kind === 'convlist' && it.opened.some((o) => o.conversationId === conversationId));
 }
 
 // tìm incident theo id (snapshot + trong các investigation) - cho phím copy
@@ -224,5 +296,6 @@ export function useFeed() {
   }, [drainTick, flush]);
 
   const pushUser = useCallback((text: string) => { flush(); dispatch({ type: 'user', text }); }, [flush]);
-  return { state, onFrame, pushUser };
+  const closeConversation = useCallback((conversationId: string) => dispatch({ type: 'close-conv', conversationId }), []);
+  return { state, onFrame, pushUser, closeConversation };
 }

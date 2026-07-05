@@ -13,6 +13,7 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vdt.aiops.agent.interact.ChatService;
+import com.vdt.aiops.agent.interact.history.ConversationBrowser;
 import com.vdt.aiops.config.websocket.snapshot.SnapshotProvider;
 
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,7 @@ public class IncidentSocketHandler extends TextWebSocketHandler {
     private final ObjectMapper objectMapper;
     private final TuiCommandService tuiCommandService;
     private final ChatService chatService;
+    private final ConversationBrowser conversationBrowser;
     
     // To check which is connecting
     private final Set<WebSocketSession> sessions = ConcurrentHashMap.newKeySet();
@@ -84,6 +86,16 @@ public class IncidentSocketHandler extends TextWebSocketHandler {
                 if (cmd.getConversationId() != null)
                     convSessions.put(cmd.getConversationId(), session);
                 chatService.ask(cmd.getConversationId(), cmd.getText(), cmd.getIncidentId());
+            } else if ("feedback".equals(cmdRaw)) {
+                // store-only human feedback: verdict + miss-taxonomy; note reuses `text`
+                tuiCommandService.feedback(cmd.getIncidentId(), cmd.getVerdict(), cmd.getMissed(), cmd.getText());
+            } else if ("conversation-history".equals(cmdRaw)) {
+                // reply directly to the requester with the conversation list
+                sendJson(session, "conversations", conversationBrowser.list());
+            } else if ("get-conversation".equals(cmdRaw)) {
+                sendJson(session, "conversation", Map.of(
+                        "conversationId", cmd.getConversationId(),
+                        "messages", conversationBrowser.get(cmd.getConversationId())));
             } else {
                 // log.warn("Unknown command: {}", cmd.command());
             }
@@ -105,6 +117,16 @@ public class IncidentSocketHandler extends TextWebSocketHandler {
             }
         } catch (IOException e) {
             // log.warn("sendTo fail {}: {}", conversationId, e.getMessage());
+        }
+    }
+
+    // reply a typed envelope directly to ONE requesting session (request/response, not broadcast)
+    private void sendJson(WebSocketSession session, String type, Object data) throws IOException {
+        String json = objectMapper.writeValueAsString(
+                TuiMessage.builder().type(type).data(data).build());
+        synchronized (session) {
+            if (session.isOpen())
+                session.sendMessage(new TextMessage(json));
         }
     }
 

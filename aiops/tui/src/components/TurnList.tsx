@@ -7,6 +7,23 @@ import type { Turn } from '../store/useFeed';
 import { C } from '../utils/theme';
 import { clock, argEntries } from '../utils/format';
 
+// DÒNG collapse CHA "tool calls" — bọc toàn bộ list turn (block click được).
+//  live  = đang chạy  -> nhãn tím + "…" ; xong -> xám mờ, thu gọn 1 dòng.
+export function ToolsHeader({
+  count, open, live,
+}: { count: number; open: boolean; live: boolean }) {
+  const marker = open ? '▾' : '▸';
+  const color = live ? C.lav : C.midnight;
+  return (
+    <Box marginTop={1}>
+      <Text color={C.muted}>{`${marker} `}</Text>
+      <Text color={color} bold={live}>tool calls</Text>
+      <Text color={C.midnight}>{`  · ${count} turn${count > 1 ? 's' : ''}`}</Text>
+      {live ? <Text color={C.lav}>{' …'}</Text> : null}
+    </Box>
+  );
+}
+
 // DÒNG toggle của 1 turn (sát lề trái, KHÔNG có đường gạch) — block click được
 export function TurnDivider({
   index, active, open,
@@ -17,7 +34,9 @@ export function TurnDivider({
     <Box marginTop={1}>
       <Text color={C.muted}>{`${marker} `}</Text>
       <Text color={labelColor} bold={active}>{`turn ${index + 1}`}</Text>
-      {active ? <Text color={C.lav}>{' …'}</Text> : null}
+      {active
+        ? <Text color={C.lav}>{' …'}</Text>
+        : <Text color={C.success} bold>{' ✓'}</Text>}
     </Box>
   );
 }
