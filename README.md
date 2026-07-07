@@ -122,6 +122,8 @@ Tool execution is driven **manually** (not auto) so the loop stays under our con
 - **`alerts`** — fired anomalies (service, type, status, `is_active`), linked to their incident.
 - **`incidents`** — the agent's diagnosis: root cause, severity, validated findings,
   hypotheses, recommended actions and cited evidence.
+- **`incident_feedback`** — feedback for incident by SRE.
+- **`chat_messages`** — conversation history.
 
 Schema is owned by **Flyway migrations** and only *validated* by JPA at startup.
 
