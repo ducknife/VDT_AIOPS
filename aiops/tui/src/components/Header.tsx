@@ -8,7 +8,7 @@ import { C } from '../utils/theme';
 import { useTerminalSize } from '../hooks/useTerminalSize';
 import { AnimatedBorder } from './AnimatedBorder';
 
-const CONTENT_H = 6; // logo 6 dòng = chiều cao nội dung
+const CONTENT_H = 7; // logo 7 dòng (khối phần-tư) = chiều cao nội dung
 
 function Divider() {
   return (

@@ -23,6 +23,8 @@ Sau đó gõ **`duckompose`** ở bất kỳ đâu để mở TUI.
 
 Gỡ: `npm unlink -g duckompose-tui` (hoặc `npm uninstall -g duckompose-tui`).
 
+> **Sau khi cập nhật code** (`git pull`, đổi asset/logo…): chạy lại **`npm run build`** để lệnh `duckompose` nhận bản mới — vì `duckompose` chạy bản đã build trong `dist/`, không phải source. (`npm link` không cần làm lại.)
+
 ## Cấu hình (`.env`)
 Copy `.env.example` thành `.env` rồi sửa, sau đó **build lại** để nướng giá trị vào bản chạy:
 ```bash
@@ -35,9 +37,9 @@ npm run build
 |------|---------|----------|
 | `DUCKOMPOSE_WS` | Địa chỉ WebSocket của engine | `ws://localhost:8088/ws/incidents` |
 
-Có thể ghi đè tạm bằng biến môi trường lúc chạy:
+Giá trị `DUCKOMPOSE_WS` được **nướng vào bản build** (esbuild `define`) → với lệnh `duckompose` phải sửa `.env` rồi `npm run build` lại mới đổi được. Chỉ ở chế độ dev (`npm start`) mới ghi đè được lúc chạy:
 ```bash
-DUCKOMPOSE_WS=ws://192.168.1.10:8088/ws/incidents duckompose
+DUCKOMPOSE_WS=ws://192.168.1.10:8088/ws/incidents npm start
 ```
 
 ## Chế độ phát triển (không cần build)
