@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { PNG } from 'pngjs';
 
 const SRC = 'src/assets/images/logo.png';
-const OUT = 'src/assets/logo.ansi';
+const OUT = 'src/logo.ansi';
 const COLS = Number(process.argv[2] ?? 20);   // chiều rộng (ký tự)
 const WHITE = 232;
 
@@ -26,6 +26,9 @@ for (let head = 0; head < q.length; head++) {
   if (x > 0) seed(i - 1); if (x < W - 1) seed(i + 1);
   if (y > 0) seed(i - W); if (y < H - 1) seed(i + W);
 }
+// tâm dấu sao = trắng bị bao kín
+let ax = 0, ay = 0, an = 0;
+for (let i = 0; i < W * H; i++) if (white[i] && !bgMask[i]) { ax += i % W; ay += (i / W) | 0; an++; }
 
 // render: chỉ NỀN NGOÀI trong suốt; trắng-bị-bao-kín (dấu sao) => pixel trắng thật
 const samp = (fx, fy) => {
@@ -35,10 +38,17 @@ const samp = (fx, fy) => {
   return { bg: bgMask[i] === 1, rgb: [data[i * 4], data[i * 4 + 1], data[i * 4 + 2]] };
 };
 
-// KHỐI PHẦN-TƯ 2x2 (Block Elements U+2580..U+259F) — có trong MỌI font terminal.
-// index = TL(1) + TR(2) + BL(4) + BR(8)
-const QUAD = [' ', '▘', '▝', '▀', '▖', '▌', '▞', '▛', '▗', '▚', '▐', '▜', '▄', '▙', '▟', '█'];
-const WT = [1, 2, 4, 8];
+// ô sextant 2x3 (U+1FB00 block). v = 6-bit, vị trí: 1 2 / 4 8 / 16 32
+const sextant = (v) => {
+  if (v === 0) return ' ';
+  if (v === 63) return '█';
+  if (v === 21) return '▌';   // cột trái đầy
+  if (v === 42) return '▐';   // cột phải đầy
+  let idx = v - 1;
+  if (v > 21) idx--;
+  if (v > 42) idx--;
+  return String.fromCodePoint(0x1FB00 + idx);
+};
 
 const PAL = [[30, 159, 242], [19, 128, 214], [155, 216, 255], [255, 255, 255]]; // blue, deep, sky, white(sao)
 const quant = (r, g, b) => {
@@ -47,20 +57,22 @@ const quant = (r, g, b) => {
   return best;
 };
 
-const ROWS = Math.max(1, Math.round((H * COLS) / (2 * W)));
 const hsamp = COLS * 2;
-const vsamp = ROWS * 2;
+const ROWS = Math.max(1, Math.round((H * COLS) / (2 * W)));
+const vsamp = ROWS * 3;
 const E = '\x1b';
 const fg = (r, g, b) => `${E}[38;2;${r};${g};${b}m`;
 const RST = `${E}[0m`;
+const WT = [1, 2, 4, 8, 16, 32];
 
 const cells = [], ink = [];
 for (let row = 0; row < ROWS; row++) {
   cells[row] = []; ink[row] = [];
   for (let col = 0; col < COLS; col++) {
     const sub = [
-      [col * 2, row * 2], [col * 2 + 1, row * 2],       // TL, TR
-      [col * 2, row * 2 + 1], [col * 2 + 1, row * 2 + 1], // BL, BR
+      [col * 2, row * 3], [col * 2 + 1, row * 3],
+      [col * 2, row * 3 + 1], [col * 2 + 1, row * 3 + 1],
+      [col * 2, row * 3 + 2], [col * 2 + 1, row * 3 + 2],
     ];
     let v = 0, r = 0, g = 0, b = 0, n = 0;
     sub.forEach(([sc, sr], k) => {
@@ -69,7 +81,7 @@ for (let row = 0; row < ROWS; row++) {
     });
     if (v === 0) { cells[row][col] = ' '; ink[row][col] = false; continue; }
     const [qr, qg, qb] = quant(r / n, g / n, b / n);
-    cells[row][col] = `${fg(qr, qg, qb)}${QUAD[v]}${RST}`;
+    cells[row][col] = `${fg(qr, qg, qb)}${sextant(v)}${RST}`;
     ink[row][col] = true;
   }
 }
@@ -81,6 +93,6 @@ for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (ink[r][c]) {
 }
 let out = '';
 for (let r = r0; r <= r1; r++) out += cells[r].slice(c0, c1 + 1).join('') + '\n';
-mkdirSync('src/assets', { recursive: true });
+mkdirSync('src', { recursive: true });
 writeFileSync(OUT, out);
-console.log(`Wrote ${OUT}: cropped ${c1 - c0 + 1}x${r1 - r0 + 1} (từ ${COLS}x${ROWS}, quadrant 2x2, src ${W}x${H})`);
+console.log(`Wrote ${OUT}: cropped ${c1 - c0 + 1}x${r1 - r0 + 1} (từ ${COLS}x${ROWS}, sextant 2x3, src ${W}x${H})`);

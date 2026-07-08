@@ -1,0 +1,4 @@
+# Art files (sextant / ANSI): luôn giữ LF, không để git chuyển sang CRLF
+# tránh \r lọt vào render terminal gây lỗi hiển thị.
+*.txt  eol=lf
+*.ansi eol=lf
