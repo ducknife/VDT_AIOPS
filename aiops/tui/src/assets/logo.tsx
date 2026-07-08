@@ -29,7 +29,7 @@ const LINES: { ch: string; color?: string }[][] = raw.split('\n').map((line) => 
 
 export function Logo() {
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" paddingX={2}>
       {LINES.map((cells, r) => (
         <Text key={r}>
           {cells.map((cell, c) => (
