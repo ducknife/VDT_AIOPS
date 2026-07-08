@@ -49,9 +49,53 @@ npm run typecheck  # kiểm tra kiểu (tsc --noEmit)
 ```
 
 ## Phím tắt trong TUI
-- `Tab` — đổi giữa chế độ gõ (chat) và chọn incident
-- `↑/↓` — cuộn (chat) / chọn incident (list)
-- `a` / `r` / `e` — ack / resolve / mở rộng incident đang chọn
-- `c` — copy toàn bộ incident đang chọn
-- Click chuột — mở/thu turn, copy khối, bấm nút
-- `Ctrl+Q` — thoát
+
+TUI có 2 chế độ: **CHAT** (gõ câu hỏi) và **SELECT** (chọn incident bằng phím). Bấm `Tab` để chuyển qua lại.
+
+### Toàn cục (luôn hoạt động)
+| Phím | Hành động |
+|------|-----------|
+| `Tab` | Chuyển đổi CHAT ↔ SELECT |
+| `PgUp` / `PgDn` | Cuộn nhanh (6 dòng) |
+| `Ctrl+Q` | Thoát |
+
+### Chế độ CHAT
+| Phím | Hành động |
+|------|-----------|
+| `↑` / `↓` | Cuộn viewport (2 dòng) |
+| `Enter` | Gửi câu hỏi |
+
+### Chế độ SELECT
+| Phím | Hành động |
+|------|-----------|
+| `↑` / `↓` | Chọn incident trước / sau |
+| `a` | Acknowledge incident đang chọn |
+| `r` | Resolve incident đang chọn |
+| `e` | Mở rộng / thu gọn chi tiết incident |
+| `c` | Copy toàn bộ incident đang chọn vào clipboard |
+| `1` / `2` / `3` | Feedback: correct / partial / wrong |
+| `Esc` | Huỷ form feedback, hoặc quay về CHAT |
+
+### Chuột
+| Thao tác | Hành động |
+|----------|-----------|
+| Lăn chuột | Cuộn viewport |
+| Click incident | Chọn + mở/thu chi tiết (chuyển sang SELECT) |
+| Click nút `a` / `r` / `e` | Ack / Resolve / Mở rộng |
+| Click hội thoại | Mở / thu gọn lịch sử hội thoại |
+| Click tool/turn | Mở / thu gọn chi tiết tool calls |
+| Click tiêu đề / đầu câu trả lời | Copy khối đó vào clipboard |
+| Kéo thanh cuộn (cột cuối) | Cuộn nhanh tới vị trí |
+| `Shift` + kéo | Bôi đen chọn text (do terminal xử lý) |
+
+## Lệnh chat (slash commands)
+
+Gõ trực tiếp vào ô chat:
+
+| Lệnh | Hành động |
+|-------|-----------|
+| `/conversations` hoặc `/conversation-history` | Liệt kê lịch sử hội thoại đã lưu |
+| `/ack <id>` | Acknowledge incident theo ID |
+| `/resolve <id>` | Resolve incident theo ID |
+| _(text bất kỳ)_ | Gửi câu hỏi cho Agent |
+

@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { PNG } from 'pngjs';
 
 const SRC = 'src/assets/images/logo.png';
-const OUT = 'src/logo.ansi';
+const OUT = 'src/assets/logo.ansi';
 const COLS = Number(process.argv[2] ?? 20);   // chiều rộng (ký tự)
 const WHITE = 232;
 
